@@ -73,7 +73,7 @@ func Test_getSportFormat(t *testing.T) {
 }
 
 func Test_getAverageFuelConsumption(t *testing.T) {
-	avg := getAverageFuelConsumption(
+	avg, _ := getAverages(
 		[]Lap{
 			{
 				FuelConsumed: -20,

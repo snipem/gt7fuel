@@ -5,11 +5,11 @@
 </head>
 <style>
     #fuel_needed_to_finish_race {
-        font-size: 9em;
+        font-size: 2em;
     }
 
     #fuel_div {
-        font-size: 2em;
+        font-size: 9em;
     }
 
     body {
@@ -30,6 +30,7 @@
 <b>Sprit nötig um Rennen zu beenden</b>
 <div id="fuel_needed_to_finish_race"></div>
 
+<b>Nachzutankender Sprit zum Abschluss des Rennens</b>
 <div id="fuel_div"></div>
 
 <b>Speed</b>
@@ -67,6 +68,7 @@
         time_since_start.textContent = data.time_since_start;
         race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
         fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
+        lap_time_avg.textContent = data.lap_time_avg;
     });
 </script>
 </body>
