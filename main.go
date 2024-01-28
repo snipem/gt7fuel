@@ -6,14 +6,17 @@ import (
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
 type Lap struct {
-	fuel_start       float32
-	fuel_end         float32
-	fuel_consumption float32
-	nr               int16
+	FuelStart    float32
+	FuelEnd      float32
+	FuelConsumed float32
+	Number       int16
+	Duration     time.Duration
 }
 
 type Stats struct {
@@ -41,7 +44,7 @@ var gt7c *gt7.GT7Communication
 //   // Handle WebSocket messages here...
 // }
 
-var race_time_in_minutes = 60
+var raceTimeInMinutes int
 
 type Message struct {
 	Speed                  string `json:"speed"`
@@ -52,6 +55,7 @@ type Message struct {
 	FuelNeededToFinishRace string `json:"fuel_needed_to_finish_race"`
 	FuelConsumptionAvg     string `json:"fuel_consumption_avg"`
 	FuelDiv                string `json:"fuel_div"`
+	RaceTimeInMinutes      int32  `json:"race_time_in_minutes"`
 }
 
 var race_start_time time.Time
@@ -60,8 +64,8 @@ func getAverageFuelConsumption(laps []Lap) float32 {
 	var totalFuelConsumption float32
 	lapsAccountable := 0
 	for _, lap := range laps {
-		if lap.fuel_consumption > 0 && lap.nr > 0 {
-			totalFuelConsumption += lap.fuel_consumption
+		if lap.FuelConsumed > 0 && lap.Number > 0 {
+			totalFuelConsumption += lap.FuelConsumed
 			lapsAccountable += 1
 		}
 	}
@@ -80,19 +84,12 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	for {
 		counter++
 
-		//"speed":      int(gt7c.LastData.CarSpeed),
-		//	"package_id": int(gt7c.LastData.PackageID),
-		//	"fuel_left":  int(gt7c.LastData.CurrentFuel)} +
-		//map[string]float32{
-		//	"fuel_consumption_last_lap": fuel_consumption_last_lap,
-		//},
-
 		timeSinceStart := time.Now().Sub(race_start_time)
 
 		// it is best to use the last lap, since this will compensate for missed package etc.
 		fuelNeededToFinishRace := calculateFuelNeededToFinishRace(
 			timeSinceStart,
-			time.Duration(race_time_in_minutes)*time.Minute,
+			time.Duration(raceTimeInMinutes)*time.Minute,
 			getDurationFromGT7Time(gt7c.LastData.BestLap),
 			getDurationFromGT7Time(gt7c.LastData.LastLap),
 			fuel_consumption_last_lap)
@@ -106,6 +103,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			FuelConsumptionAvg:     fmt.Sprintf("%.2f", getAverageFuelConsumption(laps)),
 			TimeSinceStart:         getSportFormat(timeSinceStart),
 			FuelNeededToFinishRace: fmt.Sprintf("%.1f", fuelNeededToFinishRace),
+			RaceTimeInMinutes:      int32(raceTimeInMinutes),
 		})
 
 		time.Sleep(100 * time.Millisecond)
@@ -154,10 +152,34 @@ func getDurationFromGT7Time(gt7time int32) time.Duration {
 }
 
 func getSportFormat(duration time.Duration) string {
-	return duration.String()
+	hours := int(duration.Hours())
+	minutes := int(duration.Minutes()) % 60
+	seconds := int(duration.Seconds()) % 60
+	milliseconds := duration.Milliseconds() % 1000
+
+	// If hours are present, accumulate them into minutes
+	minutes += hours * 60
+	return fmt.Sprintf("%02d:%02d.%03d", minutes, seconds, milliseconds)
+
 }
 
 func main() {
+
+	if len(os.Args) != 2 {
+		fmt.Println("Usage: go run main.go <race_time_in_minutes>")
+		os.Exit(1)
+	}
+
+	// Get the first command-line argument
+	arg := os.Args[1]
+
+	// Convert the argument to an integer
+	var err error
+	raceTimeInMinutes, err = strconv.Atoi(arg)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		os.Exit(1)
+	}
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
 	go gt7c.Run()
@@ -176,38 +198,36 @@ func main() {
 
 			if len(laps) == 0 {
 				laps = append(laps, Lap{
-					fuel_start: gt7c.LastData.CurrentFuel,
-					nr:         gt7c.LastData.CurrentLap,
+					FuelStart: gt7c.LastData.CurrentFuel,
+					Number:    gt7c.LastData.CurrentLap,
 				})
 			}
 
-			if laps[len(laps)-1].nr != gt7c.LastData.CurrentLap {
+			if laps[len(laps)-1].Number != gt7c.LastData.CurrentLap {
 				// Change of laps detected
 
 				if gt7c.LastData.CurrentLap == 1 {
 					// First crossing of the line
 					race_start_time = time.Now()
-					fmt.Printf("RACE START 🏁 %s \n", race_start_time.Format("2006-01-02 15:04:05"))
+					log.Printf("RACE START 🏁 %s \n", race_start_time.Format("2006-01-02 15:04:05"))
 				}
 
-				laps[len(laps)-1].fuel_end = gt7c.LastData.CurrentFuel
-				fuel_consumption_last_lap = laps[len(laps)-1].fuel_start - laps[len(laps)-1].fuel_end
-				laps[len(laps)-1].fuel_consumption = fuel_consumption_last_lap
+				laps[len(laps)-1].FuelEnd = gt7c.LastData.CurrentFuel
+				fuel_consumption_last_lap = laps[len(laps)-1].FuelStart - laps[len(laps)-1].FuelEnd
+				laps[len(laps)-1].FuelConsumed = fuel_consumption_last_lap
 
 				laps = append(laps, Lap{
-					fuel_start: gt7c.LastData.CurrentFuel,
-					nr:         gt7c.LastData.CurrentLap,
+					FuelStart: gt7c.LastData.CurrentFuel,
+					Number:    gt7c.LastData.CurrentLap,
 				})
-				fmt.Println("Add new Lap")
-				fmt.Println(gt7c.LastData.BestLap)
+				log.Println("Add new Lap")
 
 			}
-			//fmt.Printf("Current Lap %d\n", gt7c.LastData.CurrentLap)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
-	fmt.Println("Server gestartet")
+	log.Println("Server started")
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(":9100", nil))
 

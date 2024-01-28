@@ -12,6 +12,19 @@
         font-size: 2em;
     }
 
+    body {
+        background-color: #222;
+        color: #ddd;
+    }
+
+    a {
+        color: #6cf;
+    }
+
+    a:hover {
+        color: #9cf;
+    }
+
 </style>
 <body>
 <b>Sprit nötig um Rennen zu beenden</b>
@@ -33,6 +46,9 @@
 <b>Spritverbrauch Durchschnitt</b>
 <div id="fuel_consumption_avg"></div>
 
+<b>Renndauer</b>
+<div id="race_time_in_minutes"></div>
+
 <b>Dauer Rennen</b>
 <div id="time_since_start"></div>
 
@@ -49,6 +65,7 @@
         fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
         fuel_consumption_avg.textContent = data.fuel_consumption_avg
         time_since_start.textContent = data.time_since_start;
+        race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
         fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
     });
 </script>

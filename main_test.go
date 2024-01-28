@@ -54,3 +54,44 @@ func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 		assert.Equal(t, float32(82), fuelneededToFinish)
 	})
 }
+
+func Test_getSportFormat(t *testing.T) {
+	t.Run("getSportFormat", func(t *testing.T) {
+		formattedTime := getSportFormat(1*time.Minute + 30*time.Second + 10*time.Millisecond)
+		assert.Equal(t, "01:30.010", formattedTime)
+	})
+
+	t.Run("getSportFormatManyMilliseconds", func(t *testing.T) {
+		formattedTime := getSportFormat(1*time.Minute + 30*time.Second + 1010*time.Millisecond)
+		assert.Equal(t, "01:31.010", formattedTime)
+	})
+
+	t.Run("getSportFormatWithHours", func(t *testing.T) {
+		formattedTime := getSportFormat(2*time.Hour + 1*time.Minute + 30*time.Second + 10*time.Millisecond)
+		assert.Equal(t, "121:30.010", formattedTime)
+	})
+}
+
+func Test_getAverageFuelConsumption(t *testing.T) {
+	avg := getAverageFuelConsumption(
+		[]Lap{
+			{
+				FuelConsumed: -20,
+				Number:       0,
+			},
+			{
+				FuelConsumed: 20,
+				Number:       1,
+			},
+			{
+				FuelConsumed: 40,
+				Number:       2,
+			},
+			{
+				FuelConsumed: -200,
+				Number:       3,
+			},
+		})
+
+	assert.Equal(t, float32(30), avg)
+}
