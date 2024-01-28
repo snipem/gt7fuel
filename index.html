@@ -9,7 +9,7 @@
     }
 
     #fuel_div {
-        font-size: 9em;
+        font-size: 20em;
     }
 
     body {
@@ -27,11 +27,11 @@
 
 </style>
 <body>
-<b>Sprit nötig um Rennen zu beenden</b>
-<div id="fuel_needed_to_finish_race"></div>
-
 <b>Nachzutankender Sprit zum Abschluss des Rennens</b>
 <div id="fuel_div"></div>
+
+<b>Sprit nötig um Rennen zu beenden</b>
+<div id="fuel_needed_to_finish_race"></div>
 
 <b>Speed</b>
 <div id="speed"></div>
@@ -59,16 +59,28 @@
 
     socket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
+
         fuel_left.textContent = data.fuel_left + '%';
-        fuel_div.textContent = data.fuel_div + '%';
         speed.textContent = data.speed + ' km/h';
         package_id.textContent = data.package_id;
-        fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
         fuel_consumption_avg.textContent = data.fuel_consumption_avg
-        time_since_start.textContent = data.time_since_start;
-        race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
-        fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
-        lap_time_avg.textContent = data.lap_time_avg;
+
+        if (data.valid_state) {
+            fuel_div.textContent = data.fuel_div + '%';
+            fuel_div
+
+            fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
+            time_since_start.textContent = data.time_since_start;
+            race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
+            fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
+        } else {
+            fuel_div.textContent = "-";
+            fuel_consumption_last_lap.textContent = "-";
+            time_since_start.textContent = "-";
+            race_time_in_minutes.textContent = "-";
+            fuel_needed_to_finish_race.textContent = "-";
+        }
+
     });
 </script>
 </body>

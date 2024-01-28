@@ -56,6 +56,7 @@ type Message struct {
 	FuelConsumptionAvg     string `json:"fuel_consumption_avg"`
 	FuelDiv                string `json:"fuel_div"`
 	RaceTimeInMinutes      int32  `json:"race_time_in_minutes"`
+	ValidState             bool   `json:"valid_state"`
 }
 
 var race_start_time time.Time
@@ -98,6 +99,14 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		fuelDiv := fuelNeededToFinishRaceInTotal - gt7c.LastData.CurrentFuel
 
+		validState := true
+		//
+		//if timeSinceStart > 1000*time.Hour {
+		//	validState = false
+		//} else if fuel_consumption_last_lap <= 0 {
+		//	validState = false
+		//}
+
 		ws.WriteJSON(Message{
 			Speed:                  fmt.Sprintf("%.0f", gt7c.LastData.CarSpeed),
 			PackageID:              gt7c.LastData.PackageID,
@@ -106,8 +115,9 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			FuelConsumptionAvg:     fmt.Sprintf("%.2f", fuelConsumptionAvg),
 			TimeSinceStart:         getSportFormat(timeSinceStart),
 			FuelNeededToFinishRace: fmt.Sprintf("%.1f", fuelNeededToFinishRaceInTotal),
-			FuelDiv:                fmt.Sprintf("%.1f", fuelDiv),
+			FuelDiv:                fmt.Sprintf("%.0f", fuelDiv),
 			RaceTimeInMinutes:      int32(raceTimeInMinutes),
+			ValidState:             validState,
 		})
 
 		time.Sleep(100 * time.Millisecond)
@@ -196,6 +206,8 @@ func main() {
 
 			if gt7c.LastData.CurrentLap == 0 {
 				// Race reset
+
+				fuel_consumption_last_lap = 0
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}
@@ -213,18 +225,24 @@ func main() {
 				if gt7c.LastData.CurrentLap == 1 {
 					// First crossing of the line
 					raceStartTime = time.Now()
+					fuel_consumption_last_lap = 0
 					fmt.Printf("RACE START 🏁 %s \n", raceStartTime.Format("2006-01-02 15:04:05"))
 				}
 
 				laps[len(laps)-1].FuelEnd = gt7c.LastData.CurrentFuel
-				fuel_consumption_last_lap = laps[len(laps)-1].FuelStart - laps[len(laps)-1].FuelEnd
-				laps[len(laps)-1].FuelConsumed = fuel_consumption_last_lap
+				laps[len(laps)-1].Duration = getDurationFromGT7Time(gt7c.LastData.LastLap)
+
+				// Do not log last laps fuel consumption in the first lap
+				if gt7c.LastData.CurrentLap != 1 {
+					fuel_consumption_last_lap = laps[len(laps)-1].FuelStart - laps[len(laps)-1].FuelEnd
+					laps[len(laps)-1].FuelConsumed = fuel_consumption_last_lap
+				}
 
 				laps = append(laps, Lap{
 					FuelStart: gt7c.LastData.CurrentFuel,
 					Number:    gt7c.LastData.CurrentLap,
 				})
-				fmt.Println("Add new Lap")
+				fmt.Printf("Add new Lap. Laps: %v\n", laps)
 
 			}
 			time.Sleep(100 * time.Millisecond)
