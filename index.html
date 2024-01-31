@@ -3,16 +3,20 @@
 <head>
     <title>Real-time Dashboard</title>
 </head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-    #fuel_needed_to_finish_race {
-        font-size: 2em;
+    #laps_left_in_race {
+        font-size: 18em;
+        font-weight: bolder;
+        /*font-family: Aeros,monospace;*/
     }
 
-    #fuel_div {
-        font-size: 20em;
+    .titles {
+        font-size: 6em;
     }
 
     body {
+        font-family: Arial,serif;
         background-color: #222;
         color: #ddd;
     }
@@ -24,9 +28,37 @@
     a:hover {
         color: #9cf;
     }
+    body {
+        text-align: center;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+    }
+
+    .column {
+        width: 33.33%;
+        padding: 10px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
 
 </style>
 <body>
+<div class="row">
+    <div class="column titles">
+noch
+    </div>
+    <div class="column" id="laps_left_in_race"></div>
+    <div class="column titles">
+Runden
+    </div>
+</div>
+
 <b>Nachzutankender Sprit zum Abschluss des Rennens</b>
 <div id="fuel_div"></div>
 
@@ -53,6 +85,10 @@
 <b>Dauer Rennen</b>
 <div id="time_since_start"></div>
 
+<p><a href="/?min=60">60 min</a></p>
+<p><a href="/?min=25">25 min</a></p>
+<p><a href="/?min=10">10 min</a></p>
+
 <script>
     const dashboard = document.getElementById('dashboard');
     const socket = new WebSocket('ws://localhost:9100/ws');
@@ -67,12 +103,12 @@
 
         if (data.valid_state) {
             fuel_div.textContent = data.fuel_div + '%';
-            fuel_div
 
             fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
             time_since_start.textContent = data.time_since_start;
             race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
             fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
+            laps_left_in_race.textContent = data.laps_left_in_race;
         } else {
             fuel_div.textContent = "-";
             fuel_consumption_last_lap.textContent = "-";

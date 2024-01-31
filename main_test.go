@@ -73,7 +73,7 @@ func Test_getSportFormat(t *testing.T) {
 }
 
 func Test_getAverageFuelConsumption(t *testing.T) {
-	avg, _ := getAverages(
+	avg := getAverageFuelConsumption(
 		[]Lap{
 			{
 				FuelConsumed: -20,
@@ -94,4 +94,30 @@ func Test_getAverageFuelConsumption(t *testing.T) {
 		})
 
 	assert.Equal(t, float32(30), avg)
+}
+
+func Test_getLapsLeftInRace(t *testing.T) {
+	t.Run("getLapsLeftInRace", func(t *testing.T) {
+
+		lapsLeftInRace := getLapsLeftInRace(1*time.Minute+30*time.Second+10*time.Millisecond, 60*time.Minute, 1*time.Minute+45*time.Second)
+		assert.Equal(t, int32(34), lapsLeftInRace)
+	})
+
+	t.Run("getLapsLeftInRaceSimple", func(t *testing.T) {
+		lapsLeftInRace := getLapsLeftInRace(0, 100*time.Minute, 1*time.Minute)
+		// 100 laps by lap time and 1 additional
+		assert.Equal(t, int32(100)+int32(1), lapsLeftInRace)
+	})
+
+	t.Run("getLapsLeftInRaceCheckAddedLaps", func(t *testing.T) {
+		lapsLeftInRace := getLapsLeftInRace(100*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
+		// Max 1 lap left
+		assert.Equal(t, int32(1), lapsLeftInRace)
+	})
+
+	t.Run("getLapsLeftInRaceEndOfRace", func(t *testing.T) {
+		lapsLeftInRace := getLapsLeftInRace(101*time.Minute, 100*time.Minute, 1*time.Minute)
+		// No lap left
+		assert.Equal(t, int32(0), lapsLeftInRace)
+	})
 }

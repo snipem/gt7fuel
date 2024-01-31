@@ -6,7 +6,10 @@ import (
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -57,6 +60,24 @@ type Message struct {
 	FuelDiv                string `json:"fuel_div"`
 	RaceTimeInMinutes      int32  `json:"race_time_in_minutes"`
 	ValidState             bool   `json:"valid_state"`
+	LapsLeftInRace         int32  `json:"laps_left_in_race"`
+}
+
+func open(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default: // "linux", "freebsd", "openbsd", "netbsd"
+		cmd = "xdg-open"
+	}
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
 }
 
 var race_start_time time.Time
@@ -89,6 +110,8 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		fuelConsumptionAvg := getAverageFuelConsumption(laps)
 
+		totalDurationOfRace := time.Duration(raceTimeInMinutes) * time.Minute
+
 		// it is best to use the last lap, since this will compensate for missed package etc.
 		fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
 			timeSinceStart,
@@ -98,6 +121,8 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			fuel_consumption_last_lap)
 
 		fuelDiv := fuelNeededToFinishRaceInTotal - gt7c.LastData.CurrentFuel
+
+		lapsLeftInRace := getLapsLeftInRace(timeSinceStart, totalDurationOfRace, getDurationFromGT7Time(gt7c.LastData.BestLap))
 
 		validState := true
 		//
@@ -115,6 +140,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			FuelConsumptionAvg:     fmt.Sprintf("%.2f", fuelConsumptionAvg),
 			TimeSinceStart:         getSportFormat(timeSinceStart),
 			FuelNeededToFinishRace: fmt.Sprintf("%.1f", fuelNeededToFinishRaceInTotal),
+			LapsLeftInRace:         lapsLeftInRace,
 			FuelDiv:                fmt.Sprintf("%.0f", fuelDiv),
 			RaceTimeInMinutes:      int32(raceTimeInMinutes),
 			ValidState:             validState,
@@ -124,7 +150,26 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) int32 {
+	lapsLeft := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestLapTime) / bestLapTime
+	if lapsLeft < 0 {
+		return 0
+	}
+	return int32(lapsLeft)
+}
+
 func homePage(w http.ResponseWriter, r *http.Request) {
+
+	m, _ := url.ParseQuery(r.URL.RawQuery)
+	minsQuery := m.Get("min")
+	if minsQuery != "" {
+		convertedRacetimeInMinutes, err := strconv.Atoi(minsQuery)
+		if err != nil {
+			log.Printf("Cannot convert %s\n", minsQuery)
+		} else {
+			raceTimeInMinutes = convertedRacetimeInMinutes
+		}
+	}
 	http.ServeFile(w, r, "./index.html")
 }
 
@@ -148,13 +193,18 @@ func calculateFuelQuota(lastlaptime float64, fuelconsumedlastlap float64) float6
 }
 
 func calculateFuelNeededToFinishRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration, lastlaptime time.Duration, fuelconsumedlastlap float32) float32 {
-	totalDurationPlusExtraLap := totalDurationOfRace + bestlaptime
 	fuelConsumptionQuota := fuelconsumedlastlap / float32(lastlaptime.Milliseconds())
 
-	timeLeftInRace := totalDurationPlusExtraLap - timeInRace
+	timeLeftInRace := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestlaptime)
 
 	return float32(timeLeftInRace.Milliseconds()) * fuelConsumptionQuota
 
+}
+
+func getTimeLeftInRaceWithExtraLap(timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration) time.Duration {
+	totalDurationPlusExtraLap := totalDurationOfRace + bestlaptime
+	timeLeftInRace := totalDurationPlusExtraLap - timeInRace
+	return timeLeftInRace
 }
 
 func getDurationFromGT7Time(gt7time int32) time.Duration {
@@ -250,6 +300,7 @@ func main() {
 	}()
 
 	log.Println("Server started")
+	open("http://localhost:9100")
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(":9100", nil))
 
