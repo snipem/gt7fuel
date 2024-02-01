@@ -6,13 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
     #laps_left_in_race {
-        font-size: 18em;
+        font-size: 12em;
         font-weight: bolder;
-        /*font-family: Aeros,monospace;*/
+    }
+
+    #fuel_div {
+        font-size: 8em;
+        font-weight: bolder;
     }
 
     .titles {
-        font-size: 6em;
+        font-size: 2em;
     }
 
     body {
@@ -47,6 +51,31 @@
         text-align: center;
     }
 
+    .stats_container {
+        display: flex;
+    }
+
+    .stats_column {
+        flex: 1;
+        margin-right: 20px; /* Optional: Abstand zwischen den Spalten */
+    }
+
+    /* Letzter Element in der ersten Spalte */
+    .stats_column:first-child {
+        margin-right: 0;
+    }
+
+    /* Stelle sicher, dass die divs sich gegenseitig in der Höhe anpassen */
+    .stats_container > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Stelle sicher, dass die Inhalte der divs die verfügbare Höhe ausfüllen */
+    .stats_container > div > * {
+        flex: 1;
+    }
+
 </style>
 <body>
 <div class="row">
@@ -59,35 +88,53 @@ Runden
     </div>
 </div>
 
-<b>Nachzutankender Sprit zum Abschluss des Rennens</b>
-<div id="fuel_div"></div>
+<div class="row">
+    <div class="column titles">
+        noch
+    </div>
+    <div class="column" id="fuel_div"></div>
+    <div class="column titles">
+        tanken
+    </div>
+</div>
 
-<b>Sprit nötig um Rennen zu beenden</b>
-<div id="fuel_needed_to_finish_race"></div>
+<div class="stats_container">
+    <div class="stats_column">
+<!--        <b>Nachzutankender Sprit zum Abschluss des Rennens</b>-->
+<!--        <div id="fuel_div"></div>-->
+        <b>Sprit nötig um Rennen zu beenden</b>
+        <div id="fuel_needed_to_finish_race"></div>
 
-<b>Speed</b>
-<div id="speed"></div>
-<b>Sprit verbleibend</b>
-<div id="fuel_left"></div>
+        <b>Speed</b>
+        <div id="speed"></div>
+        <b>Sprit verbleibend</b>
+        <div id="fuel_left"></div>
+        <b>Spritverbrauch letzte Rd.</b>
+        <div id="fuel_consumption_last_lap"></div>
 
-<b>Package Id</b>
-<div id="package_id"></div>
+        <b>Spritverbrauch Durchschnitt</b>
+        <div id="fuel_consumption_avg"></div>
+    </div>
+    <div class="stats_column">
+        <b>Renndauer</b>
+        <div id="race_time_in_minutes"></div>
 
-<b>Spritverbrauch letzte Rd.</b>
-<div id="fuel_consumption_last_lap"></div>
+        <b>Dauer Rennen</b>
+        <div id="time_since_start"></div>
 
-<b>Spritverbrauch Durchschnitt</b>
-<div id="fuel_consumption_avg"></div>
+        <b>Renn-Typ</b>
+        <div id="end_of_race_type"></div>
+        <b>Package Id</b>
+        <div id="package_id"></div>
+    </div>
+</div>
 
-<b>Renndauer</b>
-<div id="race_time_in_minutes"></div>
+<p>
+    <a href="/?min=60">60 min</a>
+    <a href="/?min=25">25 min</a>
+    <a href="/?min=10">10 min</a>
+</p>
 
-<b>Dauer Rennen</b>
-<div id="time_since_start"></div>
-
-<p><a href="/?min=60">60 min</a></p>
-<p><a href="/?min=25">25 min</a></p>
-<p><a href="/?min=10">10 min</a></p>
 
 <script>
     const dashboard = document.getElementById('dashboard');
@@ -101,6 +148,12 @@ Runden
         package_id.textContent = data.package_id;
         fuel_consumption_avg.textContent = data.fuel_consumption_avg
 
+        if (data.fuel_div > 0) {
+            document.body.style.background = "#011e5e";
+        } else {
+            document.body.style.background = "#033b00"
+        }
+
         if (data.valid_state) {
             fuel_div.textContent = data.fuel_div + '%';
 
@@ -109,6 +162,7 @@ Runden
             race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
             fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
             laps_left_in_race.textContent = data.laps_left_in_race;
+            end_of_race_type.textContent = data.end_of_race_type;
         } else {
             fuel_div.textContent = "-";
             fuel_consumption_last_lap.textContent = "-";

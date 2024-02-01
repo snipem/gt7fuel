@@ -36,17 +36,6 @@ var upgrader = websocket.Upgrader{
 
 var gt7c *gt7.GT7Communication
 
-// func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
-//   ws, err := upgrader.Upgrade(w, r, nil)
-//   if err != nil {
-//     log.Println("Error upgrading to WebSocket:", err)
-//     return
-//   }
-//   defer ws.Close()
-
-//   // Handle WebSocket messages here...
-// }
-
 var raceTimeInMinutes int
 
 type Message struct {
@@ -60,7 +49,8 @@ type Message struct {
 	FuelDiv                string `json:"fuel_div"`
 	RaceTimeInMinutes      int32  `json:"race_time_in_minutes"`
 	ValidState             bool   `json:"valid_state"`
-	LapsLeftInRace         int32  `json:"laps_left_in_race"`
+	LapsLeftInRace         int16  `json:"laps_left_in_race"`
+	EndOfRaceType          string `json:"end_of_race_type"`
 }
 
 func open(url string) error {
@@ -112,17 +102,28 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		totalDurationOfRace := time.Duration(raceTimeInMinutes) * time.Minute
 
+		endOfRaceType := ""
+		lapsLeftInRace := int16(0)
+		var raceDuration time.Duration
+		if gt7c.LastData.TotalLaps > 0 {
+			lapsLeftInRace = gt7c.LastData.TotalLaps - gt7c.LastData.CurrentLap + 1 // because the current lap is ongoing
+			endOfRaceType = "By Laps"
+			raceDuration = getDurationFromGT7Time(gt7c.LastData.BestLap) * time.Duration(gt7c.LastData.TotalLaps)
+		} else {
+			lapsLeftInRace = getLapsLeftInRace(timeSinceStart, totalDurationOfRace, getDurationFromGT7Time(gt7c.LastData.BestLap))
+			endOfRaceType = "By Time"
+			raceDuration = time.Duration(raceTimeInMinutes) * time.Minute
+		}
+
 		// it is best to use the last lap, since this will compensate for missed package etc.
 		fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
 			timeSinceStart,
-			time.Duration(raceTimeInMinutes)*time.Minute,
+			raceDuration,
 			getDurationFromGT7Time(gt7c.LastData.BestLap),
 			getDurationFromGT7Time(gt7c.LastData.LastLap),
 			fuel_consumption_last_lap)
 
 		fuelDiv := fuelNeededToFinishRaceInTotal - gt7c.LastData.CurrentFuel
-
-		lapsLeftInRace := getLapsLeftInRace(timeSinceStart, totalDurationOfRace, getDurationFromGT7Time(gt7c.LastData.BestLap))
 
 		validState := true
 		//
@@ -141,8 +142,9 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			TimeSinceStart:         getSportFormat(timeSinceStart),
 			FuelNeededToFinishRace: fmt.Sprintf("%.1f", fuelNeededToFinishRaceInTotal),
 			LapsLeftInRace:         lapsLeftInRace,
+			EndOfRaceType:          endOfRaceType,
 			FuelDiv:                fmt.Sprintf("%.0f", fuelDiv),
-			RaceTimeInMinutes:      int32(raceTimeInMinutes),
+			RaceTimeInMinutes:      int32(raceDuration.Minutes()),
 			ValidState:             validState,
 		})
 
@@ -150,12 +152,12 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) int32 {
+func getLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) int16 {
 	lapsLeft := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestLapTime) / bestLapTime
 	if lapsLeft < 0 {
 		return 0
 	}
-	return int32(lapsLeft)
+	return int16(lapsLeft)
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
