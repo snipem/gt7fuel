@@ -121,3 +121,22 @@ func Test_getLapsLeftInRace(t *testing.T) {
 		assert.Equal(t, int32(0), lapsLeftInRace)
 	})
 }
+
+func Test_getMedianFuelConsumption(t *testing.T) {
+	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
+		{Number: 1, FuelConsumed: float32(5)},
+		{Number: 2, FuelConsumed: float32(5)},
+	}))
+
+	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
+		{Number: 1, FuelConsumed: float32(50)},
+		{Number: 2, FuelConsumed: float32(51)},
+		{Number: 3, FuelConsumed: float32(5)},
+	}))
+
+	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
+		{Number: 0, FuelConsumed: float32(50)},
+		{Number: 1, FuelConsumed: float32(5)},
+		{Number: 2, FuelConsumed: float32(5)},
+	}))
+}

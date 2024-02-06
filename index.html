@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Real-time Dashboard</title>
+    <title>GT7 Real-time Dashboard</title>
 </head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
@@ -10,8 +10,8 @@
         font-weight: bolder;
     }
 
-    #fuel_div {
-        font-size: 8em;
+    #fuel_needed_to_finish_race {
+        font-size: 6em;
         font-weight: bolder;
     }
 
@@ -20,7 +20,7 @@
     }
 
     body {
-        font-family: Arial,serif;
+        font-family: Arial, serif;
         background-color: #222;
         color: #ddd;
     }
@@ -32,6 +32,7 @@
     a:hover {
         color: #9cf;
     }
+
     body {
         text-align: center;
     }
@@ -80,11 +81,11 @@
 <body>
 <div class="row">
     <div class="column titles">
-noch
+        noch
     </div>
     <div class="column" id="laps_left_in_race"></div>
     <div class="column titles">
-Runden
+        Runden
     </div>
 </div>
 
@@ -92,18 +93,19 @@ Runden
     <div class="column titles">
         noch
     </div>
-    <div class="column" id="fuel_div"></div>
+    <div class="column" id="fuel_needed_to_finish_race"></div>
     <div class="column titles">
-        tanken
+        Sprit nötig
     </div>
 </div>
 
 <div class="stats_container">
     <div class="stats_column">
-<!--        <b>Nachzutankender Sprit zum Abschluss des Rennens</b>-->
-<!--        <div id="fuel_div"></div>-->
-        <b>Sprit nötig um Rennen zu beenden</b>
-        <div id="fuel_needed_to_finish_race"></div>
+        <b>Nachzutankender Sprit zum Abschluss des Rennens</b>
+        <div id="fuel_div"></div>
+
+        <!--        <b>Sprit nötig um Rennen zu beenden</b>-->
+        <!--        <div id="fuel_needed_to_finish_race"></div>-->
 
         <b>Speed</b>
         <div id="speed"></div>
@@ -131,7 +133,7 @@ Runden
 
 <p>
     <a href="/?min=60">60 min</a>
-    <a href="/?min=25">25 min</a>
+    <a href="/?min=20">20 min</a>
     <a href="/?min=10">10 min</a>
 </p>
 
@@ -154,20 +156,19 @@ Runden
             document.body.style.background = "#033b00"
         }
 
-        if (data.valid_state) {
-            fuel_div.textContent = data.fuel_div + '%';
 
-            fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
-            time_since_start.textContent = data.time_since_start;
-            race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
-            fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
-            laps_left_in_race.textContent = data.laps_left_in_race;
-            end_of_race_type.textContent = data.end_of_race_type;
-        } else {
+        time_since_start.textContent = data.time_since_start;
+        race_time_in_minutes.textContent = data.race_time_in_minutes + " min";
+        fuel_div.textContent = data.fuel_div + '%';
+        laps_left_in_race.textContent = data.laps_left_in_race;
+        fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
+        fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
+        end_of_race_type.textContent = data.end_of_race_type;
+
+        if (!data.valid_state) {
+            document.body.style.background = "#947b00";
             fuel_div.textContent = "-";
             fuel_consumption_last_lap.textContent = "-";
-            time_since_start.textContent = "-";
-            race_time_in_minutes.textContent = "-";
             fuel_needed_to_finish_race.textContent = "-";
         }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
+	"github.com/snipem/gt7fuel/lib"
 	"log"
 	"net/http"
 	"net/url"
@@ -22,12 +23,8 @@ type Lap struct {
 	Duration     time.Duration
 }
 
-type Stats struct {
-	laps []Lap
-}
-
 var laps []Lap
-var fuel_consumption_last_lap float32
+var fuelConsumptionLastLap float32
 var raceStartTime time.Time
 
 var upgrader = websocket.Upgrader{
@@ -44,7 +41,7 @@ type Message struct {
 	FuelLeft               string `json:"fuel_left"`
 	FuelConsumptionLastLap string `json:"fuel_consumption_last_lap"`
 	TimeSinceStart         string `json:"time_since_start"`
-	FuelNeededToFinishRace string `json:"fuel_needed_to_finish_race"`
+	FuelNeededToFinishRace int32  `json:"fuel_needed_to_finish_race"`
 	FuelConsumptionAvg     string `json:"fuel_consumption_avg"`
 	FuelDiv                string `json:"fuel_div"`
 	RaceTimeInMinutes      int32  `json:"race_time_in_minutes"`
@@ -70,18 +67,31 @@ func open(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-var race_start_time time.Time
+func getFuelConsumptionsAccountable(laps []Lap) []float32 {
+
+	var fuelConsumptionAccountable []float32
+
+	for _, lap := range laps {
+		if lap.FuelConsumed > 0 && lap.Number > 0 {
+			fuelConsumptionAccountable = append(fuelConsumptionAccountable, lap.FuelConsumed)
+		}
+	}
+	return fuelConsumptionAccountable
+}
 
 func getAverageFuelConsumption(laps []Lap) float32 {
 	var totalFuelConsumption float32
-	lapsAccountable := 0
-	for _, lap := range laps {
-		if lap.FuelConsumed > 0 && lap.Number > 0 {
-			totalFuelConsumption += lap.FuelConsumed
-			lapsAccountable += 1
-		}
+	lapsAccountable := getFuelConsumptionsAccountable(laps)
+
+	for _, f := range lapsAccountable {
+		totalFuelConsumption += f
 	}
-	return totalFuelConsumption / float32(lapsAccountable)
+	return totalFuelConsumption / float32(len(lapsAccountable))
+}
+
+func getMedianFuelConsumption(laps []Lap) float32 {
+	lapsAccountable := getFuelConsumptionsAccountable(laps)
+	return lib.Median(lapsAccountable)
 }
 
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +101,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer ws.Close()
+	log.Println("Have websocket connection")
 
 	counter := 0
 	for {
@@ -121,32 +132,35 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			raceDuration,
 			getDurationFromGT7Time(gt7c.LastData.BestLap),
 			getDurationFromGT7Time(gt7c.LastData.LastLap),
-			fuel_consumption_last_lap)
+			fuelConsumptionLastLap)
 
 		fuelDiv := fuelNeededToFinishRaceInTotal - gt7c.LastData.CurrentFuel
 
 		validState := true
-		//
-		//if timeSinceStart > 1000*time.Hour {
-		//	validState = false
-		//} else if fuel_consumption_last_lap <= 0 {
-		//	validState = false
-		//}
 
-		ws.WriteJSON(Message{
+		if timeSinceStart > 1000*time.Hour {
+			validState = false
+		} else if fuelConsumptionLastLap <= 0 {
+			validState = false
+		}
+
+		err := ws.WriteJSON(Message{
 			Speed:                  fmt.Sprintf("%.0f", gt7c.LastData.CarSpeed),
 			PackageID:              gt7c.LastData.PackageID,
 			FuelLeft:               fmt.Sprintf("%.2f", gt7c.LastData.CurrentFuel),
-			FuelConsumptionLastLap: fmt.Sprintf("%.2f", fuel_consumption_last_lap),
+			FuelConsumptionLastLap: fmt.Sprintf("%.2f", fuelConsumptionLastLap),
 			FuelConsumptionAvg:     fmt.Sprintf("%.2f", fuelConsumptionAvg),
 			TimeSinceStart:         getSportFormat(timeSinceStart),
-			FuelNeededToFinishRace: fmt.Sprintf("%.1f", fuelNeededToFinishRaceInTotal),
+			FuelNeededToFinishRace: lib.RoundUpAlways(fuelNeededToFinishRaceInTotal),
 			LapsLeftInRace:         lapsLeftInRace,
 			EndOfRaceType:          endOfRaceType,
 			FuelDiv:                fmt.Sprintf("%.0f", fuelDiv),
 			RaceTimeInMinutes:      int32(raceDuration.Minutes()),
 			ValidState:             validState,
 		})
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -249,9 +263,6 @@ func main() {
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
 	go gt7c.Run()
-	//for true {
-	//	fmt.Println(gt7c.LastData.CarSpeed)
-	//}
 
 	go func() {
 		for {
@@ -259,7 +270,7 @@ func main() {
 			if gt7c.LastData.CurrentLap == 0 {
 				// Race reset
 
-				fuel_consumption_last_lap = 0
+				fuelConsumptionLastLap = 0
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}
@@ -277,7 +288,7 @@ func main() {
 				if gt7c.LastData.CurrentLap == 1 {
 					// First crossing of the line
 					raceStartTime = time.Now()
-					fuel_consumption_last_lap = 0
+					fuelConsumptionLastLap = 0
 					fmt.Printf("RACE START 🏁 %s \n", raceStartTime.Format("2006-01-02 15:04:05"))
 				}
 
@@ -286,8 +297,8 @@ func main() {
 
 				// Do not log last laps fuel consumption in the first lap
 				if gt7c.LastData.CurrentLap != 1 {
-					fuel_consumption_last_lap = laps[len(laps)-1].FuelStart - laps[len(laps)-1].FuelEnd
-					laps[len(laps)-1].FuelConsumed = fuel_consumption_last_lap
+					fuelConsumptionLastLap = laps[len(laps)-1].FuelStart - laps[len(laps)-1].FuelEnd
+					laps[len(laps)-1].FuelConsumed = fuelConsumptionLastLap
 				}
 
 				laps = append(laps, Lap{
@@ -301,9 +312,13 @@ func main() {
 		}
 	}()
 
-	log.Println("Server started")
-	open("http://localhost:9100")
+	port := ":9100"
+
+	url := fmt.Sprintf("http://localhost%s", port)
+
+	log.Printf("Server started at %s\n", url)
+	open(url)
 	setupRoutes()
-	log.Fatal(http.ListenAndServe(":9100", nil))
+	log.Fatal(http.ListenAndServe(port, nil))
 
 }
