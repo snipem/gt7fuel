@@ -6,19 +6,6 @@ import (
 	"time"
 )
 
-func Test_getDurationFromGT7Time(t *testing.T) {
-
-	duration := getDurationFromGT7Time(int32(84149))
-	expectedDuration := 1*time.Minute +
-		24*time.Second +
-		149*time.Millisecond
-
-	assert.Equal(t,
-		expectedDuration,
-		duration)
-
-}
-
 func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 
 	t.Run("calculateFuelNeededToFinishRace", func(t *testing.T) {
@@ -53,64 +40,6 @@ func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 		)
 		assert.Equal(t, float32(82), fuelneededToFinish)
 	})
-}
-
-func Test_getSportFormat(t *testing.T) {
-	t.Run("getSportFormat", func(t *testing.T) {
-		formattedTime := getSportFormat(1*time.Minute + 30*time.Second + 10*time.Millisecond)
-		assert.Equal(t, "01:30.010", formattedTime)
-	})
-
-	t.Run("getSportFormatManyMilliseconds", func(t *testing.T) {
-		formattedTime := getSportFormat(1*time.Minute + 30*time.Second + 1010*time.Millisecond)
-		assert.Equal(t, "01:31.010", formattedTime)
-	})
-
-	t.Run("getSportFormatWithHours", func(t *testing.T) {
-		formattedTime := getSportFormat(2*time.Hour + 1*time.Minute + 30*time.Second + 10*time.Millisecond)
-		assert.Equal(t, "121:30.010", formattedTime)
-	})
-}
-
-func Test_getAverageFuelConsumption(t *testing.T) {
-
-	gt7stats := Stats{}
-	gt7stats.laps = []Lap{
-		{FuelConsumed: -20, Number: 0},
-		{FuelConsumed: 20, Number: 1},
-		{FuelConsumed: 40, Number: 2},
-		{FuelConsumed: -200, Number: 3},
-	}
-	avg := gt7stats.GetAverageFuelConsumption()
-
-	assert.Equal(t, float32(30), avg)
-}
-
-func Test_getAverageFuelConsumptionPerMinute(t *testing.T) {
-
-	gt7stats := Stats{}
-	gt7stats.laps = []Lap{
-		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
-	}
-	assert.Len(t, getAccountableLaps(gt7stats.laps), 2)
-	avg := gt7stats.GetFuelConsumptionPerMinute()
-
-	// 30 avg fuel per lap / 1,5 avg duration = 20 fuel per minute
-	assert.Equal(t, float32(20), avg)
-}
-
-func TestStats_GetAverageLapTime(t *testing.T) {
-	gt7stats := Stats{}
-	gt7stats.laps = []Lap{
-		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
-	}
-	assert.Equal(t, float64(90), gt7stats.GetAverageLapTime().Seconds())
 }
 
 func Test_getLapsLeftInRace(t *testing.T) {

@@ -15,19 +15,6 @@ import (
 	"time"
 )
 
-type Lap struct {
-	FuelStart    float32
-	FuelEnd      float32
-	FuelConsumed float32
-	Number       int16
-	Duration     time.Duration
-}
-
-func (l Lap) String() string {
-	return fmt.Sprintf("Lap %d: FuelStart=%.2f, FuelEnd=%.2f, FuelConsumed=%.2f, Duration=%s",
-		l.Number, l.FuelStart, l.FuelEnd, l.FuelConsumed, l.Duration)
-}
-
 var fuelConsumptionLastLap float32
 var raceStartTime time.Time
 
@@ -72,26 +59,6 @@ func open(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-func getAccountableFuelConsumption(laps []Lap) []float32 {
-
-	var fuelConsumptionAccountable []float32
-
-	for _, lap := range getAccountableLaps(laps) {
-		fuelConsumptionAccountable = append(fuelConsumptionAccountable, lap.FuelConsumed)
-	}
-	return fuelConsumptionAccountable
-}
-
-func getAccountableLaps(laps []Lap) []Lap {
-	var lapsAccountable []Lap
-	for _, lap := range laps {
-		if lap.FuelConsumed > 0 && lap.Number > 0 {
-			lapsAccountable = append(lapsAccountable, lap)
-		}
-	}
-	return lapsAccountable
-}
-
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -117,9 +84,9 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		if gt7c.LastData.TotalLaps > 0 {
 			lapsLeftInRace = gt7c.LastData.TotalLaps - gt7c.LastData.CurrentLap + 1 // because the current lap is ongoing
 			endOfRaceType = "By Laps"
-			raceDuration = getDurationFromGT7Time(gt7c.LastData.BestLap) * time.Duration(gt7c.LastData.TotalLaps)
+			raceDuration = lib.GetDurationFromGT7Time(gt7c.LastData.BestLap) * time.Duration(gt7c.LastData.TotalLaps)
 		} else {
-			lapsLeftInRace = getLapsLeftInRace(timeSinceStart, totalDurationOfRace, getDurationFromGT7Time(gt7c.LastData.BestLap))
+			lapsLeftInRace = getLapsLeftInRace(timeSinceStart, totalDurationOfRace, lib.GetDurationFromGT7Time(gt7c.LastData.BestLap))
 			endOfRaceType = "By Time"
 			raceDuration = time.Duration(raceTimeInMinutes) * time.Minute
 		}
@@ -128,8 +95,8 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
 			timeSinceStart,
 			raceDuration,
-			getDurationFromGT7Time(gt7c.LastData.BestLap),
-			getDurationFromGT7Time(gt7c.LastData.LastLap),
+			lib.GetDurationFromGT7Time(gt7c.LastData.BestLap),
+			lib.GetDurationFromGT7Time(gt7c.LastData.LastLap),
 			fuelConsumptionLastLap)
 
 		fuelDiv := fuelNeededToFinishRaceInTotal - gt7c.LastData.CurrentFuel
@@ -149,7 +116,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			FuelConsumptionLastLap:   fmt.Sprintf("%.2f", fuelConsumptionLastLap),
 			FuelConsumptionAvg:       fmt.Sprintf("%.2f", fuelConsumptionAvg),
 			FuelConsumptionPerMinute: fmt.Sprintf("%.2f", gt7stats.GetFuelConsumptionPerMinute()),
-			TimeSinceStart:           getSportFormat(timeSinceStart),
+			TimeSinceStart:           lib.GetSportFormat(timeSinceStart),
 			FuelNeededToFinishRace:   lib.RoundUpAlways(fuelNeededToFinishRaceInTotal),
 			LapsLeftInRace:           lapsLeftInRace,
 			EndOfRaceType:            endOfRaceType,
@@ -200,19 +167,19 @@ func setupRoutes() {
 	http.HandleFunc("/ws", handleWebSocketConnection)
 }
 
-func calculateFuelNeededInTotal(totalDuration float64, bestlaptime float64, lastlaptime float64, fuelconsumedlastlap float64) float64 {
-
-	totalDurationPlusExtraLap := totalDuration + bestlaptime
-	fuelConsumptionQuota := fuelconsumedlastlap / lastlaptime
-	totalFuelNeeded := totalDurationPlusExtraLap * fuelConsumptionQuota
-
-	return totalFuelNeeded
-
-}
-
-func calculateFuelQuota(lastlaptime float64, fuelconsumedlastlap float64) float64 {
-	return fuelconsumedlastlap / lastlaptime
-}
+//func calculateFuelNeededInTotal(totalDuration float64, bestlaptime float64, lastlaptime float64, fuelconsumedlastlap float64) float64 {
+//
+//	totalDurationPlusExtraLap := totalDuration + bestlaptime
+//	fuelConsumptionQuota := fuelconsumedlastlap / lastlaptime
+//	totalFuelNeeded := totalDurationPlusExtraLap * fuelConsumptionQuota
+//
+//	return totalFuelNeeded
+//
+//}
+//
+//func calculateFuelQuota(lastlaptime float64, fuelconsumedlastlap float64) float64 {
+//	return fuelconsumedlastlap / lastlaptime
+//}
 
 // calculateFuelNeededToFinishRace calculates the fuel needed to finish the race.
 //
@@ -230,58 +197,7 @@ func getTimeLeftInRaceWithExtraLap(timeInRace time.Duration, totalDurationOfRace
 	return timeLeftInRace
 }
 
-func getDurationFromGT7Time(gt7time int32) time.Duration {
-	seconds := gt7time / 1000
-	milliseconds := gt7time % 1000
-
-	return time.Duration(seconds)*time.Second + time.Duration(milliseconds*int32(time.Millisecond))
-
-}
-
-func getSportFormat(duration time.Duration) string {
-	hours := int(duration.Hours())
-	minutes := int(duration.Minutes()) % 60
-	seconds := int(duration.Seconds()) % 60
-	milliseconds := duration.Milliseconds() % 1000
-
-	// If hours are present, accumulate them into minutes
-	minutes += hours * 60
-	return fmt.Sprintf("%02d:%02d.%03d", minutes, seconds, milliseconds)
-
-}
-
-type Stats struct {
-	LastLoggedData gt7.GTData
-	laps           []Lap
-}
-
-func (s Stats) init() {
-	s.LastLoggedData = gt7.GTData{}
-}
-func (s Stats) GetAverageFuelConsumption() float32 {
-	var totalFuelConsumption float32
-	lapsAccountable := getAccountableFuelConsumption(s.laps)
-
-	for _, f := range lapsAccountable {
-		totalFuelConsumption += f
-	}
-	return totalFuelConsumption / float32(len(lapsAccountable))
-}
-
-func (s Stats) GetFuelConsumptionPerMinute() float32 {
-	return s.GetAverageFuelConsumption() / float32(s.GetAverageLapTime().Minutes())
-}
-
-func (s Stats) GetAverageLapTime() time.Duration {
-	var totalDuration time.Duration
-	accountableLaps := getAccountableLaps(s.laps)
-	for _, lap := range accountableLaps {
-		totalDuration += lap.Duration
-	}
-	return totalDuration / time.Duration(len(accountableLaps))
-}
-
-var gt7stats Stats
+var gt7stats lib.Stats
 
 func main() {
 
@@ -304,16 +220,16 @@ func main() {
 	gt7c := gt7.NewGT7Communication("255.255.255.255")
 	go gt7c.Run()
 
-	gt7stats.init()
+	gt7stats.Init()
 
 	go logGt7(gt7c)
 
 	port := ":9100"
 
-	url := fmt.Sprintf("http://localhost%s", port)
+	localurl := fmt.Sprintf("http://localhost%s", port)
 
-	log.Printf("Server started at %s\n", url)
-	open(url)
+	log.Printf("Server started at %s\n", localurl)
+	open(localurl)
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(port, nil))
 
@@ -330,14 +246,14 @@ func logGt7(c *gt7.GT7Communication) {
 			continue
 		}
 
-		if len(gt7stats.laps) == 0 {
-			gt7stats.laps = append(gt7stats.laps, Lap{
+		if len(gt7stats.Laps) == 0 {
+			gt7stats.Laps = append(gt7stats.Laps, lib.Lap{
 				FuelStart: c.LastData.CurrentFuel,
 				Number:    c.LastData.CurrentLap,
 			})
 		}
 
-		if gt7stats.laps[len(gt7stats.laps)-1].Number != c.LastData.CurrentLap {
+		if gt7stats.Laps[len(gt7stats.Laps)-1].Number != c.LastData.CurrentLap {
 			// Change of laps detected
 
 			if c.LastData.CurrentLap == 1 {
@@ -347,22 +263,22 @@ func logGt7(c *gt7.GT7Communication) {
 				fmt.Printf("RACE START 🏁 %s \n", raceStartTime.Format("2006-01-02 15:04:05"))
 			}
 
-			gt7stats.laps[len(gt7stats.laps)-1].FuelEnd = c.LastData.CurrentFuel
-			gt7stats.laps[len(gt7stats.laps)-1].Duration = getDurationFromGT7Time(c.LastData.LastLap)
+			gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd = c.LastData.CurrentFuel
+			gt7stats.Laps[len(gt7stats.Laps)-1].Duration = lib.GetDurationFromGT7Time(c.LastData.LastLap)
 
 			// Do not log last laps fuel consumption in the first lap
 			if c.LastData.CurrentLap != 1 {
-				fuelConsumptionLastLap = gt7stats.laps[len(gt7stats.laps)-1].FuelStart - gt7stats.laps[len(gt7stats.laps)-1].FuelEnd
-				gt7stats.laps[len(gt7stats.laps)-1].FuelConsumed = fuelConsumptionLastLap
+				fuelConsumptionLastLap = gt7stats.Laps[len(gt7stats.Laps)-1].FuelStart - gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd
+				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = fuelConsumptionLastLap
 			}
 
-			fmt.Printf("Add new Lap. Last Lap was: %s\n", getLastLap(gt7stats.laps))
+			fmt.Printf("Add new Lap. Last Lap was: %s\n", getLastLap(gt7stats.Laps))
 
-			newLap := Lap{
+			newLap := lib.Lap{
 				FuelStart: c.LastData.CurrentFuel,
 				Number:    c.LastData.CurrentLap,
 			}
-			gt7stats.laps = append(gt7stats.laps, newLap)
+			gt7stats.Laps = append(gt7stats.Laps, newLap)
 
 		}
 		// FIXME Use deep copy here
@@ -371,6 +287,6 @@ func logGt7(c *gt7.GT7Communication) {
 	}
 }
 
-func getLastLap(l []Lap) *Lap {
-	return &gt7stats.laps[len(gt7stats.laps)-1]
+func getLastLap(l []lib.Lap) *lib.Lap {
+	return &gt7stats.Laps[len(gt7stats.Laps)-1]
 }
