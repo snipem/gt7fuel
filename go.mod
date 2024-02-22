@@ -3,6 +3,7 @@ module github.com/snipem/gt7fuel
 go 1.20
 
 require (
+	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/gorilla/websocket v1.5.1
 	github.com/snipem/go-gt7-telemetry v0.0.0-20230701065033-cf5d68d36c92
 	github.com/stretchr/testify v1.8.4

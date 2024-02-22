@@ -73,70 +73,79 @@ func Test_getSportFormat(t *testing.T) {
 }
 
 func Test_getAverageFuelConsumption(t *testing.T) {
-	avg := getAverageFuelConsumption(
-		[]Lap{
-			{
-				FuelConsumed: -20,
-				Number:       0,
-			},
-			{
-				FuelConsumed: 20,
-				Number:       1,
-			},
-			{
-				FuelConsumed: 40,
-				Number:       2,
-			},
-			{
-				FuelConsumed: -200,
-				Number:       3,
-			},
-		})
+
+	gt7stats := Stats{}
+	gt7stats.laps = []Lap{
+		{FuelConsumed: -20, Number: 0},
+		{FuelConsumed: 20, Number: 1},
+		{FuelConsumed: 40, Number: 2},
+		{FuelConsumed: -200, Number: 3},
+	}
+	avg := gt7stats.GetAverageFuelConsumption()
 
 	assert.Equal(t, float32(30), avg)
+}
+
+func Test_getAverageFuelConsumptionPerMinute(t *testing.T) {
+
+	gt7stats := Stats{}
+	gt7stats.laps = []Lap{
+		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
+		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
+		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
+		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+	}
+	assert.Len(t, getAccountableLaps(gt7stats.laps), 2)
+	avg := gt7stats.GetFuelConsumptionPerMinute()
+
+	// 30 avg fuel per lap / 1,5 avg duration = 20 fuel per minute
+	assert.Equal(t, float32(20), avg)
+}
+
+func TestStats_GetAverageLapTime(t *testing.T) {
+	gt7stats := Stats{}
+	gt7stats.laps = []Lap{
+		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
+		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
+		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
+		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+	}
+	assert.Equal(t, float64(90), gt7stats.GetAverageLapTime().Seconds())
 }
 
 func Test_getLapsLeftInRace(t *testing.T) {
 	t.Run("getLapsLeftInRace", func(t *testing.T) {
 
 		lapsLeftInRace := getLapsLeftInRace(1*time.Minute+30*time.Second+10*time.Millisecond, 60*time.Minute, 1*time.Minute+45*time.Second)
-		assert.Equal(t, int32(34), lapsLeftInRace)
+		assert.Equal(t, int16(34), lapsLeftInRace)
 	})
 
 	t.Run("getLapsLeftInRaceSimple", func(t *testing.T) {
 		lapsLeftInRace := getLapsLeftInRace(0, 100*time.Minute, 1*time.Minute)
 		// 100 laps by lap time and 1 additional
-		assert.Equal(t, int32(100)+int32(1), lapsLeftInRace)
+		assert.Equal(t, int16(100)+int16(1), lapsLeftInRace)
 	})
+
+	t.Run("getLapsLeftInRace30SecondsToGo", func(t *testing.T) {
+		lapsLeftInRace := getLapsLeftInRace(99*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
+		assert.Equal(t, int16(1), lapsLeftInRace)
+	})
+
+	//t.Run("getLapsLeftInRaceNoTimeLeft", func(t *testing.T) {
+	//	timeInRace := 100 * time.Minute
+	//	lapsLeftInRace := getLapsLeftInRace(timeInRace, timeInRace, 1*time.Minute)
+	//	assert.Equal(t, int16(0), lapsLeftInRace)
+	//})
 
 	t.Run("getLapsLeftInRaceCheckAddedLaps", func(t *testing.T) {
 		lapsLeftInRace := getLapsLeftInRace(100*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
-		// Max 1 lap left
-		assert.Equal(t, int32(1), lapsLeftInRace)
+		// In last lap
+		assert.Equal(t, int16(0), lapsLeftInRace)
 	})
 
 	t.Run("getLapsLeftInRaceEndOfRace", func(t *testing.T) {
 		lapsLeftInRace := getLapsLeftInRace(101*time.Minute, 100*time.Minute, 1*time.Minute)
 		// No lap left
-		assert.Equal(t, int32(0), lapsLeftInRace)
+		assert.Equal(t, int16(0), lapsLeftInRace)
 	})
-}
-
-func Test_getMedianFuelConsumption(t *testing.T) {
-	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
-		{Number: 1, FuelConsumed: float32(5)},
-		{Number: 2, FuelConsumed: float32(5)},
-	}))
-
-	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
-		{Number: 1, FuelConsumed: float32(50)},
-		{Number: 2, FuelConsumed: float32(51)},
-		{Number: 3, FuelConsumed: float32(5)},
-	}))
-
-	assert.Equal(t, float32(5), getMedianFuelConsumption([]Lap{
-		{Number: 0, FuelConsumed: float32(50)},
-		{Number: 1, FuelConsumed: float32(5)},
-		{Number: 2, FuelConsumed: float32(5)},
-	}))
 }

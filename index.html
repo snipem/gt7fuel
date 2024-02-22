@@ -114,8 +114,10 @@
         <b>Spritverbrauch letzte Rd.</b>
         <div id="fuel_consumption_last_lap"></div>
 
-        <b>Spritverbrauch Durchschnitt</b>
+        <b>Spritverbrauch Durchschnitt pro Runde</b>
         <div id="fuel_consumption_avg"></div>
+        <b>Spritverbrauch pro Minute</b>
+        <div id="fuel_consumption_per_minute"></div>
     </div>
     <div class="stats_column">
         <b>Renndauer</b>
@@ -164,6 +166,7 @@
         fuel_consumption_last_lap.textContent = data.fuel_consumption_last_lap
         fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
         end_of_race_type.textContent = data.end_of_race_type;
+        fuel_consumption_per_minute.textContent = data.fuel_consumption_per_minute;
 
         if (!data.valid_state) {
             document.body.style.background = "#947b00";
