@@ -9,38 +9,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
 	"strconv"
 	"time"
 )
 
+var gt7c *gt7.GT7Communication
+var gt7stats *lib.Stats
 var fuelConsumptionLastLap float32
 var raceStartTime time.Time
+var raceTimeInMinutes int
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-var gt7c *gt7.GT7Communication
-
-var raceTimeInMinutes int
-
-func open(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
 }
 
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
@@ -90,22 +70,6 @@ func setupRoutes() {
 	http.HandleFunc("/ws", handleWebSocketConnection)
 }
 
-//func calculateFuelNeededInTotal(totalDuration float64, bestlaptime float64, lastlaptime float64, fuelconsumedlastlap float64) float64 {
-//
-//	totalDurationPlusExtraLap := totalDuration + bestlaptime
-//	fuelConsumptionQuota := fuelconsumedlastlap / lastlaptime
-//	totalFuelNeeded := totalDurationPlusExtraLap * fuelConsumptionQuota
-//
-//	return totalFuelNeeded
-//
-//}
-//
-//func calculateFuelQuota(lastlaptime float64, fuelconsumedlastlap float64) float64 {
-//	return fuelconsumedlastlap / lastlaptime
-//}
-
-var gt7stats lib.Stats
-
 func main() {
 
 	if len(os.Args) != 2 {
@@ -129,71 +93,18 @@ func main() {
 
 	gt7stats.Init()
 
-	go logGt7(gt7c)
+	go lib.LogRace(gt7c, gt7stats)
 
 	port := ":9100"
 
 	localurl := fmt.Sprintf("http://localhost%s", port)
 
 	log.Printf("Server started at %s\n", localurl)
-	open(localurl)
+	err = lib.Open(localurl)
+	if err != nil {
+		log.Fatal(err)
+	}
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(port, nil))
 
-}
-
-func logGt7(c *gt7.GT7Communication) {
-	for {
-
-		if c.LastData.CurrentLap == 0 {
-			// Race reset
-
-			fuelConsumptionLastLap = 0
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-
-		if len(gt7stats.Laps) == 0 {
-			gt7stats.Laps = append(gt7stats.Laps, lib.Lap{
-				FuelStart: c.LastData.CurrentFuel,
-				Number:    c.LastData.CurrentLap,
-			})
-		}
-
-		if gt7stats.Laps[len(gt7stats.Laps)-1].Number != c.LastData.CurrentLap {
-			// Change of laps detected
-
-			if c.LastData.CurrentLap == 1 {
-				// First crossing of the line
-				raceStartTime = time.Now()
-				fuelConsumptionLastLap = 0
-				fmt.Printf("RACE START 🏁 %s \n", raceStartTime.Format("2006-01-02 15:04:05"))
-			}
-
-			gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd = c.LastData.CurrentFuel
-			gt7stats.Laps[len(gt7stats.Laps)-1].Duration = lib.GetDurationFromGT7Time(c.LastData.LastLap)
-
-			// Do not log last laps fuel consumption in the first lap
-			if c.LastData.CurrentLap != 1 {
-				fuelConsumptionLastLap = gt7stats.Laps[len(gt7stats.Laps)-1].FuelStart - gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd
-				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = fuelConsumptionLastLap
-			}
-
-			fmt.Printf("Add new Lap. Last Lap was: %s\n", getLastLap(gt7stats.Laps))
-
-			newLap := lib.Lap{
-				FuelStart: c.LastData.CurrentFuel,
-				Number:    c.LastData.CurrentLap,
-			}
-			gt7stats.Laps = append(gt7stats.Laps, newLap)
-
-		}
-		// FIXME Use deep copy here
-		gt7stats.LastLoggedData.FuelCapacity = c.LastData.FuelCapacity
-		time.Sleep(100 * time.Millisecond)
-	}
-}
-
-func getLastLap(l []lib.Lap) *lib.Lap {
-	return &gt7stats.Laps[len(gt7stats.Laps)-1]
 }

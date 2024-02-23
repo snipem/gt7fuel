@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func logGt7(c *gt7.GT7Communication, gt7stats *Stats) {
+func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 	for {
 
 		if c.LastData.CurrentLap == 0 {
