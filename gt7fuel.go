@@ -33,12 +33,10 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	log.Println("Have websocket connection")
 
 	counter := 0
+	gt7stats.LastData = &gt7c.LastData
 	for {
 		counter++
-		gt7stats.LastData = &gt7c.LastData
 		gt7stats.SetManualSetRaceDuration(time.Duration(raceTimeInMinutes) * time.Minute)
-		gt7stats.SetRaceStartTime(raceStartTime)
-		gt7stats.SetFuelConsumptionLastLap(fuelConsumptionLastLap)
 
 		err := ws.WriteJSON(gt7stats.GetMessage())
 
@@ -88,10 +86,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	gt7c := gt7.NewGT7Communication("255.255.255.255")
+	gt7c = gt7.NewGT7Communication("255.255.255.255")
 	go gt7c.Run()
 
-	gt7stats.Init()
+	gt7stats = &lib.Stats{}
 
 	go lib.LogRace(gt7c, gt7stats)
 

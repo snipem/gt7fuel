@@ -30,10 +30,14 @@ func (l Lap) String() string {
 		l.Number, l.FuelStart, l.FuelEnd, l.FuelConsumed, l.Duration)
 }
 
-func (s Stats) Init() {
+func (s *Stats) Reset() {
 	s.LastLoggedData = gt7.GTData{}
+	// Set empty ongoing lap
+	s.Laps = []Lap{{FuelStart: 0, FuelEnd: 0, FuelConsumed: 0, Number: 0, Duration: 0}}
+	s.raceStartTime = time.Now()
+	s.fuelConsumptionLastLap = 0
 }
-func (s Stats) GetAverageFuelConsumption() float32 {
+func (s *Stats) GetAverageFuelConsumption() float32 {
 	var totalFuelConsumption float32
 	lapsAccountable := GetAccountableFuelConsumption(s.Laps)
 
@@ -43,20 +47,25 @@ func (s Stats) GetAverageFuelConsumption() float32 {
 	return totalFuelConsumption / float32(len(lapsAccountable))
 }
 
-func (s Stats) GetFuelConsumptionPerMinute() float32 {
+func (s *Stats) GetFuelConsumptionPerMinute() float32 {
 	return s.GetAverageFuelConsumption() / float32(s.GetAverageLapTime().Minutes())
 }
 
-func (s Stats) GetAverageLapTime() time.Duration {
+func (s *Stats) GetAverageLapTime() time.Duration {
 	var totalDuration time.Duration
 	accountableLaps := getAccountableLaps(s.Laps)
 	for _, lap := range accountableLaps {
 		totalDuration += lap.Duration
 	}
+
+	if len(accountableLaps) == 0 {
+		return 0
+	}
+
 	return totalDuration / time.Duration(len(accountableLaps))
 }
 
-func (s Stats) GetMessage() interface{} {
+func (s *Stats) GetMessage() interface{} {
 	return Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
@@ -75,7 +84,7 @@ func (s Stats) GetMessage() interface{} {
 
 }
 
-func (s Stats) getValidState() bool {
+func (s *Stats) getValidState() bool {
 	validState := true
 
 	if s.GetTimeSinceStart() > 1000*time.Hour {
@@ -86,7 +95,7 @@ func (s Stats) getValidState() bool {
 	return validState
 }
 
-func (s Stats) getEndOfRaceType() string {
+func (s *Stats) getEndOfRaceType() string {
 
 	endOfRaceType := ""
 	if s.LastData.TotalLaps > 0 {
@@ -97,15 +106,16 @@ func (s Stats) getEndOfRaceType() string {
 	return endOfRaceType
 }
 
-func (s Stats) getLapsLeftInRace() int16 {
+func (s *Stats) getLapsLeftInRace() int16 {
 	if s.LastData.TotalLaps > 0 {
 		return s.LastData.TotalLaps - s.LastData.CurrentLap + 1 // because the current lap is ongoing
 	} else {
-		return GetLapsLeftInRace(s.GetTimeSinceStart(), s.getRaceDuration(), GetDurationFromGT7Time(s.LastData.BestLap))
+		bestLap := GetDurationFromGT7Time(s.LastData.BestLap)
+		return GetLapsLeftInRace(s.GetTimeSinceStart(), s.getRaceDuration(), bestLap)
 	}
 
 }
-func (s Stats) getRaceDuration() time.Duration {
+func (s *Stats) getRaceDuration() time.Duration {
 	var raceDuration time.Duration
 	if s.LastData.TotalLaps > 0 {
 		raceDuration = GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
@@ -116,20 +126,20 @@ func (s Stats) getRaceDuration() time.Duration {
 
 }
 
-func (s Stats) SetManualSetRaceDuration(duration time.Duration) {
+func (s *Stats) SetManualSetRaceDuration(duration time.Duration) {
 	s.ManualSetRaceDuration = duration
 }
 
-func (s Stats) SetRaceStartTime(startTime time.Time) {
+func (s *Stats) SetRaceStartTime(startTime time.Time) {
 	s.raceStartTime = startTime
 
 }
 
-func (s Stats) GetTimeSinceStart() time.Duration {
+func (s *Stats) GetTimeSinceStart() time.Duration {
 	return time.Now().Sub(s.raceStartTime)
 }
 
-func (s Stats) GetFuelNeededToFinishRaceInTotal() float32 {
+func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
 	fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
@@ -143,11 +153,11 @@ func (s Stats) GetFuelNeededToFinishRaceInTotal() float32 {
 
 }
 
-func (s Stats) SetFuelConsumptionLastLap(fuelConsumption float32) {
+func (s *Stats) SetFuelConsumptionLastLap(fuelConsumption float32) {
 	s.fuelConsumptionLastLap = fuelConsumption
 }
 
-func (s Stats) GetFuelDiv() any {
+func (s *Stats) GetFuelDiv() any {
 	fuelDiv := s.GetFuelNeededToFinishRaceInTotal() - s.LastData.CurrentFuel
 	return fuelDiv
 

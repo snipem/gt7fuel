@@ -29,8 +29,7 @@ func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 
 			if c.LastData.CurrentLap == 1 {
 				// First crossing of the line
-				gt7stats.raceStartTime = time.Now()
-				gt7stats.fuelConsumptionLastLap = 0
+				gt7stats.Reset()
 				fmt.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
 			}
 

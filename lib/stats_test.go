@@ -37,12 +37,28 @@ func Test_getAverageFuelConsumptionPerMinute(t *testing.T) {
 }
 
 func TestStats_GetAverageLapTime(t *testing.T) {
-	gt7stats := Stats{}
-	gt7stats.Laps = []Lap{
-		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
-	}
-	assert.Equal(t, float64(90), gt7stats.GetAverageLapTime().Seconds())
+
+	t.Run("GetAverageLapTime", func(t *testing.T) {
+
+		gt7stats := Stats{}
+		gt7stats.Laps = []Lap{
+			{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
+			{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
+			{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
+			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+		}
+		assert.Equal(t, float64(90), gt7stats.GetAverageLapTime().Seconds())
+	})
+
+	t.Run("GetAverageLapTimeWithNoLaps", func(t *testing.T) {
+
+		gt7stats := Stats{}
+		gt7stats.Laps = []Lap{
+			{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
+			{FuelConsumed: -20, Number: 1, Duration: 90 * time.Second},
+			{FuelConsumed: -40, Number: 2, Duration: 90 * time.Second},
+			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+		}
+		assert.Equal(t, float64(0), gt7stats.GetAverageLapTime().Seconds())
+	})
 }
