@@ -6,3 +6,6 @@ install:
 
 run:
 	go run gt7fuel.go 60
+
+test:
+	go test ./lib
