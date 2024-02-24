@@ -1,8 +1,8 @@
 package lib
 
 import (
-	"fmt"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
+	"log"
 	"time"
 )
 
@@ -30,7 +30,7 @@ func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 			if c.LastData.CurrentLap == 1 {
 				// First crossing of the line
 				gt7stats.Reset()
-				fmt.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
+				log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
 			}
 
 			gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd = c.LastData.CurrentFuel
@@ -42,7 +42,7 @@ func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = gt7stats.fuelConsumptionLastLap
 			}
 
-			fmt.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.Laps[len(gt7stats.Laps)-1])
+			log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.Laps[len(gt7stats.Laps)-1])
 
 			newLap := Lap{
 				FuelStart: c.LastData.CurrentFuel,

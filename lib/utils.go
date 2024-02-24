@@ -80,6 +80,10 @@ func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Durati
 	// Calculate the time left in the race with an extra lap
 	timeLeftWithExtraLap := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestLapTime)
 
+	if bestLapTime == 0 {
+		return 0
+	}
+
 	// Calculate the number of laps left based on the time left with the best lap time
 	lapsLeft := timeLeftWithExtraLap / bestLapTime
 

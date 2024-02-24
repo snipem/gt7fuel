@@ -66,6 +66,15 @@ func (s *Stats) GetAverageLapTime() time.Duration {
 }
 
 func (s *Stats) GetMessage() interface{} {
+
+	timeSinceStart := ""
+
+	if s.raceStartTime.IsZero() {
+		timeSinceStart = "Kein Start erfasst"
+	} else {
+		GetSportFormat(s.GetTimeSinceStart())
+	}
+
 	return Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
@@ -73,7 +82,7 @@ func (s *Stats) GetMessage() interface{} {
 		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", s.fuelConsumptionLastLap),
 		FuelConsumptionAvg:       fmt.Sprintf("%.2f", s.GetAverageFuelConsumption()),
 		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", s.GetFuelConsumptionPerMinute()),
-		TimeSinceStart:           GetSportFormat(s.GetTimeSinceStart()),
+		TimeSinceStart:           timeSinceStart,
 		FuelNeededToFinishRace:   RoundUpAlways(s.GetFuelNeededToFinishRaceInTotal()),
 		LapsLeftInRace:           s.getLapsLeftInRace(),
 		EndOfRaceType:            s.getEndOfRaceType(),

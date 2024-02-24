@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 )
@@ -70,21 +69,7 @@ func setupRoutes() {
 
 func main() {
 
-	if len(os.Args) != 2 {
-		fmt.Println("Usage: go run main.go <race_time_in_minutes>")
-		os.Exit(1)
-	}
-
-	// Get the first command-line argument
-	arg := os.Args[1]
-
-	// Convert the argument to an integer
-	var err error
-	raceTimeInMinutes, err = strconv.Atoi(arg)
-	if err != nil {
-		fmt.Println("Error: ", err)
-		os.Exit(1)
-	}
+	raceTimeInMinutes = 60
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
 	go gt7c.Run()
@@ -98,7 +83,7 @@ func main() {
 	localurl := fmt.Sprintf("http://localhost%s", port)
 
 	log.Printf("Server started at %s\n", localurl)
-	err = lib.Open(localurl)
+	err := lib.Open(localurl)
 	if err != nil {
 		log.Fatal(err)
 	}
