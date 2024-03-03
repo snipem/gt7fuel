@@ -70,12 +70,12 @@ func (s *Stats) GetMessage() interface{} {
 	timeSinceStart := ""
 
 	if s.raceStartTime.IsZero() {
-		timeSinceStart = "Kein Start erfasst"
+		timeSinceStart = "Noch kein Start erfasst"
 	} else {
-		GetSportFormat(s.GetTimeSinceStart())
+		timeSinceStart = GetSportFormat(s.GetTimeSinceStart())
 	}
 
-	return Message{
+	message := Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
 		FuelLeft:                 fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
@@ -90,6 +90,7 @@ func (s *Stats) GetMessage() interface{} {
 		RaceTimeInMinutes:        int32(s.getRaceDuration().Minutes()),
 		ValidState:               s.getValidState(),
 	}
+	return message
 
 }
 
@@ -98,7 +99,7 @@ func (s *Stats) getValidState() bool {
 
 	if s.GetTimeSinceStart() > 1000*time.Hour {
 		validState = false
-	} else if s.fuelConsumptionLastLap <= 0 {
+	} else if s.fuelConsumptionLastLap < 0 {
 		validState = false
 	}
 	return validState
