@@ -40,7 +40,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		err := ws.WriteJSON(gt7stats.GetMessage())
 
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Error writing JSON: %s\n", err)
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -85,7 +85,7 @@ func main() {
 	log.Printf("Server started at %s\n", localurl)
 	err := lib.Open(localurl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error opening browser: %v", err)
 	}
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(port, nil))
