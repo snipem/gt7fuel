@@ -8,18 +8,34 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"time"
 )
 
 var gt7c *gt7.GT7Communication
 var gt7stats *lib.Stats
-var fuelConsumptionLastLap float32
-var raceStartTime time.Time
 var raceTimeInMinutes int
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func stayAwake() {
+
+	if runtime.GOOS == "darwin" {
+		log.Println("Staying wake on Mac")
+
+		cmd := exec.Command("caffeinate", "-d")
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("Staying awake was ended by: %v", err)
+		}
+		log.Println("Staying awake ended")
+	} else {
+		log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
+	}
+
 }
 
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +99,9 @@ func main() {
 	localurl := fmt.Sprintf("http://localhost%s", port)
 
 	log.Printf("Server started at %s\n", localurl)
+
+	go stayAwake()
+
 	err := lib.Open(localurl)
 	if err != nil {
 		log.Fatalf("Error opening browser: %v", err)
