@@ -86,9 +86,28 @@ func setupRoutes() {
 func main() {
 
 	raceTimeInMinutes = 60
+	for {
+		run(raceTimeInMinutes)
+		log.Println("Sleeping 10 seconds ...")
+		time.Sleep(10 * time.Second)
+	}
+
+}
+
+func run(int) {
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
-	go gt7c.Run()
+	go func() {
+
+		for {
+			err := gt7c.Run()
+			if err != nil {
+				log.Printf("error running gt7c.Run(): %v", err)
+			}
+			log.Println("Sleeping 10 seconds before restarting gt7c.Run()")
+			time.Sleep(10 * time.Second)
+		}
+	}()
 
 	gt7stats = &lib.Stats{}
 
@@ -107,6 +126,5 @@ func main() {
 		log.Fatalf("Error opening browser: %v", err)
 	}
 	setupRoutes()
-	log.Fatal(http.ListenAndServe(port, nil))
-
+	log.Println(http.ListenAndServe(port, nil))
 }
