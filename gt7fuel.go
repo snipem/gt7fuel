@@ -57,6 +57,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			log.Printf("Error writing JSON: %s\n", err)
+			time.Sleep(10 * time.Second)
 		}
 
 		time.Sleep(100 * time.Millisecond)
