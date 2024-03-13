@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
+	"math"
 	"time"
 )
 
@@ -75,6 +76,8 @@ func (s *Stats) GetMessage() interface{} {
 		timeSinceStart = GetSportFormat(s.GetTimeSinceStart())
 	}
 
+	minTemp := math.Min(float64(s.LastData.TyreTempFL), math.Min(float64(s.LastData.TyreTempFR), math.Min(float64(s.LastData.TyreTempRR), float64(s.LastData.TyreTempRL))))
+
 	message := Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
@@ -89,6 +92,7 @@ func (s *Stats) GetMessage() interface{} {
 		FuelDiv:                  fmt.Sprintf("%.0f", s.GetFuelDiv()),
 		RaceTimeInMinutes:        int32(s.getRaceDuration().Minutes()),
 		ValidState:               s.getValidState(),
+		LowestTireTemp:           float32(minTemp),
 	}
 	return message
 
