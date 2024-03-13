@@ -3,56 +3,63 @@ package lib
 import (
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"log"
-	"time"
 )
 
-func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
-	for {
+func LogTick(ld *gt7.GTData, gt7stats *Stats) bool {
+	//if ld.CurrentLap == 0 {
+	//	// Race reset
+	//	return false
+	//}
 
-		if c.LastData.CurrentLap == 0 {
-			// Race reset
+	//if ld.CurrentLap > 0 && len(gt7stats.Laps) == 0 {
+	//	gt7stats.Laps = append(gt7stats.Laps, Lap{
+	//		FuelStart: ld.CurrentFuel,
+	//		Number:    ld.CurrentLap,
+	//	})
+	//}
 
-			gt7stats.fuelConsumptionLastLap = 0
-			time.Sleep(100 * time.Millisecond)
-			continue
+	//if len(gt7stats.Laps) == 0 {
+	//	return false
+	//}
+
+	if gt7stats.LastLoggedData.CurrentLap == 0 && ld.CurrentLap == 1 {
+		// First crossing of the line
+		gt7stats.Reset()
+
+		gt7stats.OngoingLap = Lap{
+			FuelStart: ld.CurrentFuel,
+			Number:    ld.CurrentLap,
 		}
 
-		if len(gt7stats.Laps) == 0 {
-			gt7stats.Laps = append(gt7stats.Laps, Lap{
-				FuelStart: c.LastData.CurrentFuel,
-				Number:    c.LastData.CurrentLap,
-			})
-		}
+		log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
+	}
 
-		if gt7stats.Laps[len(gt7stats.Laps)-1].Number != c.LastData.CurrentLap {
-			// Change of laps detected
+	if gt7stats.OngoingLap.Number != ld.CurrentLap {
+		// Change of laps detected
+		finishLap(ld, gt7stats)
+	}
 
-			if c.LastData.CurrentLap == 1 {
-				// First crossing of the line
-				gt7stats.Reset()
-				log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
-			}
+	// FIXME Use deep copy here
+	gt7stats.LastLoggedData.FuelCapacity = ld.FuelCapacity
+	gt7stats.LastLoggedData.CurrentLap = ld.CurrentLap
+	return true
+}
 
-			gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd = c.LastData.CurrentFuel
-			gt7stats.Laps[len(gt7stats.Laps)-1].Duration = GetDurationFromGT7Time(c.LastData.LastLap)
+func finishLap(ld *gt7.GTData, gt7stats *Stats) {
+	gt7stats.OngoingLap.FuelEnd = ld.CurrentFuel
+	gt7stats.OngoingLap.Duration = GetDurationFromGT7Time(ld.LastLap)
 
-			// Do not log last laps fuel consumption in the first lap
-			if c.LastData.CurrentLap != 1 {
-				gt7stats.fuelConsumptionLastLap = gt7stats.Laps[len(gt7stats.Laps)-1].FuelStart - gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd
-				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = gt7stats.fuelConsumptionLastLap
-			}
+	// Do not log last laps fuel consumption in the first lap
+	if ld.CurrentLap != 1 {
+		fuelConsumptionLastLap := gt7stats.OngoingLap.FuelStart - gt7stats.OngoingLap.FuelEnd
+		gt7stats.OngoingLap.FuelConsumed = fuelConsumptionLastLap
+	}
 
-			log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.Laps[len(gt7stats.Laps)-1])
+	log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.OngoingLap)
 
-			newLap := Lap{
-				FuelStart: c.LastData.CurrentFuel,
-				Number:    c.LastData.CurrentLap,
-			}
-			gt7stats.Laps = append(gt7stats.Laps, newLap)
-
-		}
-		// FIXME Use deep copy here
-		gt7stats.LastLoggedData.FuelCapacity = c.LastData.FuelCapacity
-		time.Sleep(100 * time.Millisecond)
+	gt7stats.Laps = append(gt7stats.Laps, gt7stats.OngoingLap)
+	gt7stats.OngoingLap = Lap{
+		FuelStart: ld.CurrentFuel,
+		Number:    ld.CurrentLap,
 	}
 }

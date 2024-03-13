@@ -22,6 +22,28 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+func LogRace(c *gt7.GT7Communication, gt7stats *lib.Stats) {
+	for {
+		lib.LogTick(&c.LastData, gt7stats)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+func open(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default: // "linux", "freebsd", "openbsd", "netbsd"
+		cmd = "xdg-open"
+	}
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
+}
 func stayAwake() {
 
 	if runtime.GOOS == "darwin" {
@@ -110,9 +132,9 @@ func run(int) {
 		}
 	}()
 
-	gt7stats = &lib.Stats{}
+	gt7stats = lib.NewStats()
 
-	go lib.LogRace(gt7c, gt7stats)
+	go LogRace(gt7c, gt7stats)
 
 	port := ":9100"
 
@@ -122,7 +144,7 @@ func run(int) {
 
 	go stayAwake()
 
-	err := lib.Open(localurl)
+	err := open(localurl)
 	if err != nil {
 		log.Fatalf("Error opening browser: %v", err)
 	}

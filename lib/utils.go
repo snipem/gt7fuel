@@ -2,32 +2,8 @@ package lib
 
 import (
 	"fmt"
-	"os/exec"
-	"runtime"
-	"sort"
 	"time"
 )
-
-func Median(data []float32) float32 {
-	dataCopy := make([]float64, len(data))
-	for i, v := range data {
-		dataCopy[i] = float64(v)
-	}
-
-	sort.Float64s(dataCopy)
-
-	var median float32
-	l := len(dataCopy)
-	if l == 0 {
-		return 0
-	} else if l%2 == 0 {
-		median = float32((dataCopy[l/2-1] + dataCopy[l/2]) / 2)
-	} else {
-		median = float32(dataCopy[l/2])
-	}
-
-	return median
-}
 
 func RoundUpAlways(d float32) int32 {
 	simpleRoundRup := int32(d)
@@ -108,21 +84,4 @@ func getTimeLeftInRaceWithExtraLap(timeInRace time.Duration, totalDurationOfRace
 	totalDurationPlusExtraLap := totalDurationOfRace + bestlaptime
 	timeLeftInRace := totalDurationPlusExtraLap - timeInRace
 	return timeLeftInRace
-}
-
-func Open(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
 }
