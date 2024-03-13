@@ -19,7 +19,8 @@ type Stats struct {
 
 func NewStats() *Stats {
 	s := Stats{}
-	s.Reset()
+	s.LastLoggedData = gt7.GTData{}
+	s.LastData = &gt7.GTData{}
 	return &s
 }
 
@@ -73,12 +74,14 @@ func (s *Stats) GetAverageLapTime() time.Duration {
 	return totalDuration / time.Duration(len(accountableLaps))
 }
 
+const NO_START_DETECTED = "Noch kein Start erfasst"
+
 func (s *Stats) GetMessage() interface{} {
 
 	timeSinceStart := ""
 
 	if s.raceStartTime.IsZero() {
-		timeSinceStart = "Noch kein Start erfasst"
+		timeSinceStart = NO_START_DETECTED
 	} else {
 		timeSinceStart = GetSportFormat(s.GetTimeSinceStart())
 	}
@@ -136,13 +139,11 @@ func (s *Stats) getLapsLeftInRace() int16 {
 
 }
 func (s *Stats) getRaceDuration() time.Duration {
-	var raceDuration time.Duration
 	if s.LastData.TotalLaps > 0 {
-		raceDuration = GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
+		return GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
 	} else {
 		return s.ManualSetRaceDuration
 	}
-	return raceDuration
 
 }
 
@@ -171,10 +172,6 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
 
 	return fuelNeededToFinishRaceInTotal
 
-}
-
-func (s *Stats) SetFuelConsumptionLastLap(fuelConsumption float32) {
-	s.fuelConsumptionLastLap = fuelConsumption
 }
 
 func (s *Stats) GetFuelDiv() any {

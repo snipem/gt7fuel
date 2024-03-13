@@ -113,15 +113,14 @@ func TestStats_getEndOfRaceType(t *testing.T) {
 }
 
 func TestStats_GetMessage(t *testing.T) {
-	t.Run("Get plain message", func(t *testing.T) {
+	t.Run("No start yet", func(t *testing.T) {
 		s := NewStats()
-		//s.raceStartTime = time.Now().Add(time.Duration(-10) * time.Minute)
 		assert.Equal(t, Message{
 			Speed:                    "0",
 			PackageID:                0,
 			FuelLeft:                 "0.00",
 			FuelConsumptionLastLap:   "0.00",
-			TimeSinceStart:           "00:00.000",
+			TimeSinceStart:           NO_START_DETECTED,
 			FuelNeededToFinishRace:   0,
 			FuelConsumptionAvg:       "NaN",
 			FuelDiv:                  "NaN",
@@ -130,6 +129,90 @@ func TestStats_GetMessage(t *testing.T) {
 			LapsLeftInRace:           0,
 			EndOfRaceType:            "By Time",
 			FuelConsumptionPerMinute: "NaN",
+		}, s.GetMessage())
+	})
+
+	t.Run("Start 10 Minutes ago, 60 Minutes Race", func(t *testing.T) {
+		s := NewStats()
+		s.LastData.CarSpeed = 100
+		s.LastData.PackageID = 4711
+
+		s.SetManualSetRaceDuration(30)
+		s.SetRaceStartTime(time.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
+
+		s.Laps = []Lap{
+			{
+				FuelStart:    100,
+				FuelEnd:      50,
+				FuelConsumed: 50,
+				Number:       0,
+				Duration:     1*time.Minute + 31*time.Second,
+			},
+			{
+				FuelStart:    50,
+				FuelEnd:      25,
+				FuelConsumed: 25,
+				Number:       1,
+				Duration:     1*time.Minute + 30*time.Second,
+			},
+		}
+
+		assert.Equal(t, Message{
+			Speed:                    "100",
+			PackageID:                4711,
+			FuelLeft:                 "0.00",
+			FuelConsumptionLastLap:   "0.00",
+			TimeSinceStart:           "10:00.500",
+			FuelNeededToFinishRace:   0,
+			FuelConsumptionAvg:       "25.00",
+			FuelDiv:                  "NaN",
+			RaceTimeInMinutes:        0,
+			ValidState:               false,
+			LapsLeftInRace:           0,
+			EndOfRaceType:            "By Time",
+			FuelConsumptionPerMinute: "16.67",
+		}, s.GetMessage())
+	})
+
+	t.Run("Start 10 Minutes ago with 10 Laps in Total", func(t *testing.T) {
+		s := NewStats()
+		s.LastData.CarSpeed = 100
+		s.LastData.PackageID = 4711
+		s.LastData.TotalLaps = 10
+
+		s.SetRaceStartTime(time.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
+
+		s.Laps = []Lap{
+			{
+				FuelStart:    100,
+				FuelEnd:      50,
+				FuelConsumed: 50,
+				Number:       0,
+				Duration:     1*time.Minute + 31*time.Second,
+			},
+			{
+				FuelStart:    50,
+				FuelEnd:      25,
+				FuelConsumed: 25,
+				Number:       1,
+				Duration:     1*time.Minute + 30*time.Second,
+			},
+		}
+
+		assert.Equal(t, Message{
+			Speed:                    "100",
+			PackageID:                4711,
+			FuelLeft:                 "0.00",
+			FuelConsumptionLastLap:   "0.00",
+			TimeSinceStart:           "10:00.500",
+			FuelNeededToFinishRace:   0,
+			FuelConsumptionAvg:       "25.00",
+			FuelDiv:                  "NaN",
+			RaceTimeInMinutes:        0,
+			ValidState:               false,
+			LapsLeftInRace:           11,
+			EndOfRaceType:            BY_LAPS,
+			FuelConsumptionPerMinute: "16.67",
 		}, s.GetMessage())
 	})
 
