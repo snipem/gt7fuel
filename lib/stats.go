@@ -9,6 +9,7 @@ import (
 type Stats struct {
 	LastLoggedData gt7.GTData
 	Laps           []Lap
+	OngoingLap     Lap
 	LastData       *gt7.GTData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
@@ -48,7 +49,6 @@ func (s *Stats) Reset() {
 	s.LastData = &gt7.GTData{}
 
 	// Set empty ongoing lap
-	s.Laps = []Lap{{FuelStart: 0, FuelEnd: 0, FuelConsumed: 0, Number: 0, Duration: 0}}
 	s.raceStartTime = time.Now()
 }
 func (s *Stats) GetAverageFuelConsumption() float32 {
