@@ -110,7 +110,7 @@ func run(int) {
 		}
 	}()
 
-	gt7stats = &lib.Stats{}
+	gt7stats = lib.NewStats()
 
 	go lib.LogRace(gt7c, gt7stats)
 

@@ -17,6 +17,12 @@ type Stats struct {
 	fuelConsumptionLastLap float32
 }
 
+func NewStats() *Stats {
+	s := Stats{}
+	s.Reset()
+	return &s
+}
+
 type Lap struct {
 	FuelStart    float32
 	FuelEnd      float32
@@ -32,6 +38,8 @@ func (l Lap) String() string {
 
 func (s *Stats) Reset() {
 	s.LastLoggedData = gt7.GTData{}
+	s.LastData = &gt7.GTData{}
+
 	// Set empty ongoing lap
 	s.Laps = []Lap{{FuelStart: 0, FuelEnd: 0, FuelConsumed: 0, Number: 0, Duration: 0}}
 	s.raceStartTime = time.Now()
@@ -95,23 +103,25 @@ func (s *Stats) GetMessage() interface{} {
 }
 
 func (s *Stats) getValidState() bool {
-	validState := true
+	validState := false
 
-	if s.GetTimeSinceStart() > 1000*time.Hour {
-		validState = false
-	} else if s.fuelConsumptionLastLap < 0 {
-		validState = false
+	if s.GetTimeSinceStart() < 1000*time.Hour && s.fuelConsumptionLastLap > 0 {
+		validState = true
 	}
+
 	return validState
 }
+
+const BY_LAPS = "By Laps"
+const BY_TIME = "By Time"
 
 func (s *Stats) getEndOfRaceType() string {
 
 	endOfRaceType := ""
 	if s.LastData.TotalLaps > 0 {
-		endOfRaceType = "By Laps"
+		endOfRaceType = BY_LAPS
 	} else {
-		endOfRaceType = "By Time"
+		endOfRaceType = BY_TIME
 	}
 	return endOfRaceType
 }
