@@ -138,7 +138,7 @@ func TestStats_GetMessage(t *testing.T) {
 			TimeSinceStart:           NoStartDetected,
 			FuelNeededToFinishRace:   0,
 			FuelConsumptionAvg:       "NaN",
-			FuelDiv:                  "NaN",
+			FuelDiv:                  "0",
 			RaceTimeInMinutes:        0,
 			ValidState:               false,
 			LapsLeftInRace:           0,

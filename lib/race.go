@@ -3,9 +3,10 @@ package lib
 import (
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"log"
+	"time"
 )
 
-func LogTick(ld *gt7.GTData, gt7stats *Stats) bool {
+func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 	//if ld.CurrentLap == 0 {
 	//	// Race reset
 	//	return false
@@ -18,18 +19,19 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats) bool {
 	//	})
 	//}
 
-	//if len(gt7stats.Laps) == 0 {
-	//	return false
-	//}
+	gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
+
+	if len(gt7stats.Laps) > 0 && ld.CurrentLap == 0 {
+		gt7stats.Reset()
+		resetOngoingLap(ld, gt7stats)
+		gt7stats.Laps = []Lap{}
+
+	}
 
 	if gt7stats.LastLoggedData.CurrentLap == 0 && ld.CurrentLap == 1 {
 		// First crossing of the line
 		gt7stats.Reset()
-
-		gt7stats.OngoingLap = Lap{
-			FuelStart: ld.CurrentFuel,
-			Number:    ld.CurrentLap,
-		}
+		resetOngoingLap(ld, gt7stats)
 
 		log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
 	}
@@ -43,6 +45,13 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats) bool {
 	gt7stats.LastLoggedData.FuelCapacity = ld.FuelCapacity
 	gt7stats.LastLoggedData.CurrentLap = ld.CurrentLap
 	return true
+}
+
+func resetOngoingLap(ld *gt7.GTData, gt7stats *Stats) {
+	gt7stats.OngoingLap = Lap{
+		FuelStart: ld.CurrentFuel,
+		Number:    ld.CurrentLap,
+	}
 }
 
 func finishLap(ld *gt7.GTData, gt7stats *Stats) {

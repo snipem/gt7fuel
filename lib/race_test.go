@@ -86,34 +86,34 @@ func Test_logTick(t *testing.T) {
 	ld.CurrentFuel = 100
 	ld.LastLap = 0
 
-	_ = LogTick(ld, s)
+	_ = LogTick(ld, s, nil)
 	assert.Len(t, s.Laps, 0)
 
 	// Do another log tick, laps should still be 0
 	ld.CurrentFuel = 99
 	ld.LastLap = 0
-	_ = LogTick(ld, s)
+	_ = LogTick(ld, s, nil)
 	assert.Len(t, s.Laps, 0)
 
 	// Race Start Start Lap 1
 	ld.CurrentFuel = 98
 	ld.LastLap = 0
 	ld.CurrentLap = 1 // RACE START FROM NO ON!
-	_ = LogTick(ld, s)
+	_ = LogTick(ld, s, nil)
 	assert.Len(t, s.Laps, 0) // Should have lap now, the ongoing
 
 	// Start Lap 2
 	ld.CurrentFuel = 95
 	ld.CurrentLap = 2
 	ld.LastLap = 3 * 60 * 1000
-	_ = LogTick(ld, s)
+	_ = LogTick(ld, s, nil)
 	assert.Len(t, s.Laps, 1) // Should have lap now, the last and the ongoing
 
 	// Start Lap 3
 	ld.CurrentFuel = 93
 	ld.CurrentLap = 3
 	ld.LastLap = 2 * 60 * 1000
-	_ = LogTick(ld, s)
+	_ = LogTick(ld, s, nil)
 	assert.Len(t, s.Laps, 2) // Should have lap now, the last and the ongoing
 
 	// No should have only 2 laps, because lap 3 is not completed yet
@@ -122,5 +122,13 @@ func Test_logTick(t *testing.T) {
 
 	assert.Equal(t, float32(2.5), s.GetAverageFuelConsumption())
 	assert.Equal(t, time.Duration(2*time.Minute+30*time.Second), s.GetAverageLapTime())
+
+	// Start a new race
+	// First tick, pre race
+	ld.CurrentFuel = 100
+	ld.CurrentLap = 0
+
+	_ = LogTick(ld, s, nil)
+	assert.Len(t, s.Laps, 0)
 
 }

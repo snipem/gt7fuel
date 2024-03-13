@@ -117,7 +117,7 @@ func (s *Stats) GetMessage() interface{} {
 func (s *Stats) getValidState() bool {
 	validState := false
 
-	if s.GetTimeSinceStart() < 1000*time.Hour && s.getFuelConsumptionLastLap() > 0 {
+	if s.GetTimeSinceStart() < 1000*time.Hour && s.getFuelConsumptionLastLap() >= 0 {
 		validState = true
 	}
 
@@ -151,7 +151,7 @@ func (s *Stats) getRaceDuration() time.Duration {
 	if s.LastData.TotalLaps > 0 {
 		return GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
 	} else {
-		return s.ManualSetRaceDuration * time.Minute
+		return s.ManualSetRaceDuration
 	}
 
 }
@@ -170,6 +170,11 @@ func (s *Stats) GetTimeSinceStart() time.Duration {
 }
 
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
+
+	if s.LastData.BestLap == 0 || s.LastData.LastLap == 0 {
+		// FIXME: this should be better reflected
+		return 0
+	}
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
 	fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(

@@ -22,9 +22,9 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func LogRace(c *gt7.GT7Communication, gt7stats *lib.Stats) {
+func LogRace(c *gt7.GT7Communication, gt7stats *lib.Stats, i *int) {
 	for {
-		lib.LogTick(&c.LastData, gt7stats)
+		lib.LogTick(&c.LastData, gt7stats, i)
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -134,7 +134,7 @@ func run(int) {
 
 	gt7stats = lib.NewStats()
 
-	go LogRace(gt7c, gt7stats)
+	go LogRace(gt7c, gt7stats, &raceTimeInMinutes)
 
 	port := ":9100"
 
