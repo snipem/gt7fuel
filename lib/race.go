@@ -12,7 +12,6 @@ func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 		if c.LastData.CurrentLap == 0 {
 			// Race reset
 
-			gt7stats.fuelConsumptionLastLap = 0
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
@@ -38,8 +37,8 @@ func LogRace(c *gt7.GT7Communication, gt7stats *Stats) {
 
 			// Do not log last laps fuel consumption in the first lap
 			if c.LastData.CurrentLap != 1 {
-				gt7stats.fuelConsumptionLastLap = gt7stats.Laps[len(gt7stats.Laps)-1].FuelStart - gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd
-				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = gt7stats.fuelConsumptionLastLap
+				fuelConsumptionLastLap := gt7stats.Laps[len(gt7stats.Laps)-1].FuelStart - gt7stats.Laps[len(gt7stats.Laps)-1].FuelEnd
+				gt7stats.Laps[len(gt7stats.Laps)-1].FuelConsumed = fuelConsumptionLastLap
 			}
 
 			log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.Laps[len(gt7stats.Laps)-1])

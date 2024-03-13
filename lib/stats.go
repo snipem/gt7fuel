@@ -12,9 +12,15 @@ type Stats struct {
 	LastData       *gt7.GTData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
-	ManualSetRaceDuration  time.Duration
-	raceStartTime          time.Time
-	fuelConsumptionLastLap float32
+	ManualSetRaceDuration time.Duration
+	raceStartTime         time.Time
+}
+
+func (s *Stats) getFuelConsumptionLastLap() float32 {
+	if len(s.Laps) < 2 {
+		return 0
+	}
+	return s.Laps[len(s.Laps)-2].FuelConsumed
 }
 
 func NewStats() *Stats {
@@ -44,7 +50,6 @@ func (s *Stats) Reset() {
 	// Set empty ongoing lap
 	s.Laps = []Lap{{FuelStart: 0, FuelEnd: 0, FuelConsumed: 0, Number: 0, Duration: 0}}
 	s.raceStartTime = time.Now()
-	s.fuelConsumptionLastLap = 0
 }
 func (s *Stats) GetAverageFuelConsumption() float32 {
 	var totalFuelConsumption float32
@@ -74,14 +79,14 @@ func (s *Stats) GetAverageLapTime() time.Duration {
 	return totalDuration / time.Duration(len(accountableLaps))
 }
 
-const NO_START_DETECTED = "Noch kein Start erfasst"
+const NoStartDetected = "Noch kein Start erfasst"
 
 func (s *Stats) GetMessage() interface{} {
 
 	timeSinceStart := ""
 
 	if s.raceStartTime.IsZero() {
-		timeSinceStart = NO_START_DETECTED
+		timeSinceStart = NoStartDetected
 	} else {
 		timeSinceStart = GetSportFormat(s.GetTimeSinceStart())
 	}
@@ -90,7 +95,7 @@ func (s *Stats) GetMessage() interface{} {
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
 		FuelLeft:                 fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
-		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", s.fuelConsumptionLastLap),
+		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", s.getFuelConsumptionLastLap()),
 		FuelConsumptionAvg:       fmt.Sprintf("%.2f", s.GetAverageFuelConsumption()),
 		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", s.GetFuelConsumptionPerMinute()),
 		TimeSinceStart:           timeSinceStart,
@@ -108,23 +113,23 @@ func (s *Stats) GetMessage() interface{} {
 func (s *Stats) getValidState() bool {
 	validState := false
 
-	if s.GetTimeSinceStart() < 1000*time.Hour && s.fuelConsumptionLastLap > 0 {
+	if s.GetTimeSinceStart() < 1000*time.Hour && s.getFuelConsumptionLastLap() > 0 {
 		validState = true
 	}
 
 	return validState
 }
 
-const BY_LAPS = "By Laps"
-const BY_TIME = "By Time"
+const ByLaps = "By Laps"
+const ByTime = "By Time"
 
 func (s *Stats) getEndOfRaceType() string {
 
 	endOfRaceType := ""
 	if s.LastData.TotalLaps > 0 {
-		endOfRaceType = BY_LAPS
+		endOfRaceType = ByLaps
 	} else {
-		endOfRaceType = BY_TIME
+		endOfRaceType = ByTime
 	}
 	return endOfRaceType
 }
@@ -142,7 +147,7 @@ func (s *Stats) getRaceDuration() time.Duration {
 	if s.LastData.TotalLaps > 0 {
 		return GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
 	} else {
-		return s.ManualSetRaceDuration
+		return s.ManualSetRaceDuration * time.Minute
 	}
 
 }
@@ -168,7 +173,7 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
 		s.getRaceDuration(),
 		GetDurationFromGT7Time(s.LastData.BestLap),
 		GetDurationFromGT7Time(s.LastData.LastLap),
-		s.fuelConsumptionLastLap)
+		s.getFuelConsumptionLastLap())
 
 	return fuelNeededToFinishRaceInTotal
 
