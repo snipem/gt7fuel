@@ -87,6 +87,17 @@ func TestStats_getLapsLeftInRace(t *testing.T) {
 		assert.Equal(t, int16(6), lapsLeftInRace)
 	})
 
+	t.Run("Max time is set, but no race start set", func(t *testing.T) {
+		gt7stats := NewStats()
+		gt7stats.LastData.CurrentLap = 5
+		gt7stats.LastData.BestLap = 1 * 60 * 1000
+		gt7stats.SetManualSetRaceDuration(10 * time.Minute)
+
+		lapsLeftInRace, err := gt7stats.getLapsLeftInRace()
+		assert.Error(t, err)
+		assert.Equal(t, int16(-1), lapsLeftInRace)
+	})
+
 }
 
 func TestStats_getValidState(t *testing.T) {
