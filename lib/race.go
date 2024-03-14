@@ -19,6 +19,12 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 	//	})
 	//}
 
+	if gt7stats.LastLoggedData.PackageID != ld.PackageID {
+		gt7stats.ConnectionActive = true
+	} else {
+		gt7stats.ConnectionActive = false
+	}
+
 	gt7stats.LastData = ld
 	gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
 
@@ -26,7 +32,6 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 		gt7stats.Reset()
 		resetOngoingLap(ld, gt7stats)
 		gt7stats.Laps = []Lap{}
-
 	}
 
 	if gt7stats.LastLoggedData.CurrentLap == 0 && ld.CurrentLap == 1 {
@@ -45,6 +50,7 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 	// FIXME Use deep copy here
 	gt7stats.LastLoggedData.FuelCapacity = ld.FuelCapacity
 	gt7stats.LastLoggedData.CurrentLap = ld.CurrentLap
+	gt7stats.LastLoggedData.PackageID = ld.PackageID
 	return true
 }
 

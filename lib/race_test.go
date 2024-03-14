@@ -86,6 +86,7 @@ func Test_logTick(t *testing.T) {
 	// First tick, pre race
 	ld.CurrentFuel = 100
 	ld.LastLap = 0
+	ld.PackageID += 1
 
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0)
@@ -93,6 +94,7 @@ func Test_logTick(t *testing.T) {
 	// Do another log tick, laps should still be 0
 	ld.CurrentFuel = 99
 	ld.LastLap = 0
+	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0)
 
@@ -100,6 +102,7 @@ func Test_logTick(t *testing.T) {
 	ld.CurrentFuel = 98
 	ld.LastLap = 0
 	ld.CurrentLap = 1 // RACE START FROM NO ON!
+	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0) // Should have lap now, the ongoing
 
@@ -107,6 +110,7 @@ func Test_logTick(t *testing.T) {
 	ld.CurrentFuel = 95
 	ld.CurrentLap = 2
 	ld.LastLap = 3 * 60 * 1000
+	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 1) // Should have lap now, the last and the ongoing
 
@@ -114,6 +118,7 @@ func Test_logTick(t *testing.T) {
 	ld.CurrentFuel = 93
 	ld.CurrentLap = 3
 	ld.LastLap = 2 * 60 * 1000
+	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 2) // Should have lap now, the last and the ongoing
 
@@ -131,7 +136,13 @@ func Test_logTick(t *testing.T) {
 	ld.CurrentFuel = 100
 	ld.CurrentLap = 0
 
+	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0)
+
+	// First time package id is not incremented, connection be active now
+	assert.True(t, s.ConnectionActive)
+	_ = LogTick(ld, s, &raceTimeInMinutes)
+	assert.False(t, s.ConnectionActive)
 
 }

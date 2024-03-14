@@ -19,6 +19,7 @@ type Stats struct {
 	ManualSetRaceDuration time.Duration
 	raceStartTime         time.Time
 	clock                 clock.Clock
+	ConnectionActive      bool
 }
 
 func (s *Stats) getFuelConsumptionLastLap() (float32, error) {
@@ -32,6 +33,7 @@ func NewStats() *Stats {
 	s := Stats{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
+	s.ConnectionActive = false
 	// set a proper clock
 	s.setClock(clock.New())
 	return &s

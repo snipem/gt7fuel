@@ -46,18 +46,23 @@ func open(url string) error {
 	args = append(args, url)
 	return exec.Command(cmd, args...).Start()
 }
-func stayAwake() {
+func stayAwakeIfConnectionActive(s *lib.Stats) {
 
-	if runtime.GOOS == "darwin" {
-		log.Println("Staying wake on Mac")
+	for {
+		if s.ConnectionActive {
 
-		cmd := exec.Command("caffeinate", "-d")
-		if err := cmd.Run(); err != nil {
-			log.Fatalf("Staying awake was ended by: %v", err)
+			if runtime.GOOS == "darwin" {
+				log.Println("Staying wake on Mac")
+				cmd := exec.Command("caffeinate", "-d", "-t", "600") // 10 minutes
+				if err := cmd.Run(); err != nil {
+					log.Fatalf("Staying awake was ended by: %v", err)
+				}
+				//log.Println("Staying awake ended")
+			} else {
+				log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
+			}
 		}
-		log.Println("Staying awake ended")
-	} else {
-		log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
+		time.Sleep(10 * time.Second)
 	}
 
 }
@@ -145,7 +150,7 @@ func run(int) {
 
 	log.Printf("Server started at %s\n", localurl)
 
-	go stayAwake()
+	go stayAwakeIfConnectionActive(gt7stats)
 
 	err := open(localurl)
 	if err != nil {
