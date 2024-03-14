@@ -72,7 +72,6 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	log.Println("Have websocket connection")
 
 	counter := 0
-	gt7stats.LastData = &gt7c.LastData
 	for {
 		counter++
 		gt7stats.SetManualSetRaceDuration(time.Duration(raceTimeInMinutes) * time.Minute)

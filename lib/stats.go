@@ -161,7 +161,7 @@ func (s *Stats) GetMessage() interface{} {
 }
 
 func (s *Stats) getValidState() bool {
-	validState := false
+	validState := true
 
 	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
 	if err != nil {
@@ -171,8 +171,10 @@ func (s *Stats) getValidState() bool {
 	durationSinceStart, err := s.GetDurationSinceStart()
 	if err != nil {
 		validState = false
-	} else if durationSinceStart < 1000*time.Hour && fuelConsumptionLastLap >= 0 {
-		validState = true
+	}
+
+	if durationSinceStart > 1000*time.Hour || fuelConsumptionLastLap < 0 {
+		validState = false
 	}
 
 	return validState

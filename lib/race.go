@@ -19,6 +19,7 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 	//	})
 	//}
 
+	gt7stats.LastData = ld
 	gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
 
 	if len(gt7stats.Laps) > 0 && ld.CurrentLap == 0 {
