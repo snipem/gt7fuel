@@ -146,6 +146,10 @@
     <a href="/?min=10">10 min</a>
 </p>
 
+<div id="error_message_container">
+    <pre id="error_message"></pre>
+</div>
+
 <script>
     const dashboard = document.getElementById('dashboard');
     const socket = new WebSocket('ws://localhost:9100/ws');
@@ -165,7 +169,7 @@
         }
 
         // console.log(data.lowest_tire_temp)
-        if (data.lowest_tire_temp < 62) {
+        if (data.lowest_tire_temp < 0) {
             document.body.style.borderColor = 'red';
         } else {
             document.body.style.borderColor = 'transparent';
@@ -188,6 +192,8 @@
             fuel_needed_to_finish_race.textContent = "-";
             laps_left_in_race.textContent = "-";
         }
+
+        error_message.textContent = data.error_message;
 
     });
 </script>

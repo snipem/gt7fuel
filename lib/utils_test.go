@@ -81,18 +81,21 @@ func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 func Test_getLapsLeftInRace(t *testing.T) {
 	t.Run("getLapsLeftInRace", func(t *testing.T) {
 
-		lapsLeftInRace := GetLapsLeftInRace(1*time.Minute+30*time.Second+10*time.Millisecond, 60*time.Minute, 1*time.Minute+45*time.Second)
+		lapsLeftInRace, err := GetLapsLeftInRace(1*time.Minute+30*time.Second+10*time.Millisecond, 60*time.Minute, 1*time.Minute+45*time.Second)
+		assert.NoError(t, err)
 		assert.Equal(t, int16(34), lapsLeftInRace)
 	})
 
 	t.Run("getLapsLeftInRaceSimple", func(t *testing.T) {
-		lapsLeftInRace := GetLapsLeftInRace(0, 100*time.Minute, 1*time.Minute)
+		lapsLeftInRace, err := GetLapsLeftInRace(0, 100*time.Minute, 1*time.Minute)
+		assert.NoError(t, err)
 		// 100 laps by lap time and 1 additional
 		assert.Equal(t, int16(100)+int16(1), lapsLeftInRace)
 	})
 
 	t.Run("getLapsLeftInRace30SecondsToGo", func(t *testing.T) {
-		lapsLeftInRace := GetLapsLeftInRace(99*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
+		lapsLeftInRace, err := GetLapsLeftInRace(99*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
+		assert.NoError(t, err)
 		assert.Equal(t, int16(1), lapsLeftInRace)
 	})
 
@@ -103,13 +106,13 @@ func Test_getLapsLeftInRace(t *testing.T) {
 	//})
 
 	t.Run("getLapsLeftInRaceCheckAddedLaps", func(t *testing.T) {
-		lapsLeftInRace := GetLapsLeftInRace(100*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
+		lapsLeftInRace, _ := GetLapsLeftInRace(100*time.Minute+30*time.Second, 100*time.Minute, 1*time.Minute)
 		// In last lap
 		assert.Equal(t, int16(0), lapsLeftInRace)
 	})
 
 	t.Run("getLapsLeftInRaceEndOfRace", func(t *testing.T) {
-		lapsLeftInRace := GetLapsLeftInRace(101*time.Minute, 100*time.Minute, 1*time.Minute)
+		lapsLeftInRace, _ := GetLapsLeftInRace(101*time.Minute, 100*time.Minute, 1*time.Minute)
 		// No lap left
 		assert.Equal(t, int16(0), lapsLeftInRace)
 	})

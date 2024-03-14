@@ -67,8 +67,9 @@ func TestStats_getLapsLeftInRace(t *testing.T) {
 
 	t.Run("Is zero", func(t *testing.T) {
 		gt7stats := NewStats()
-		lapsLeftInRace := gt7stats.getLapsLeftInRace()
-		assert.Equal(t, int16(0), lapsLeftInRace)
+		lapsLeftInRace, err := gt7stats.getLapsLeftInRace()
+		assert.Error(t, err)
+		assert.Equal(t, int16(-1), lapsLeftInRace)
 	})
 
 	t.Run("Total Laps is set", func(t *testing.T) {
@@ -76,7 +77,8 @@ func TestStats_getLapsLeftInRace(t *testing.T) {
 		gt7stats.LastData.TotalLaps = 10
 		gt7stats.LastData.CurrentLap = 5
 
-		lapsLeftInRace := gt7stats.getLapsLeftInRace()
+		lapsLeftInRace, err := gt7stats.getLapsLeftInRace()
+		assert.NoError(t, err)
 		assert.Equal(t, int16(6), lapsLeftInRace)
 	})
 
@@ -136,14 +138,15 @@ func TestStats_GetMessage(t *testing.T) {
 			FuelLeft:                 "0.00",
 			FuelConsumptionLastLap:   "0.00",
 			TimeSinceStart:           NoStartDetected,
-			FuelNeededToFinishRace:   0,
+			FuelNeededToFinishRace:   -1,
 			FuelConsumptionAvg:       "NaN",
-			FuelDiv:                  "0",
+			FuelDiv:                  "-1",
 			RaceTimeInMinutes:        0,
 			ValidState:               false,
-			LapsLeftInRace:           0,
+			LapsLeftInRace:           -1,
 			EndOfRaceType:            "By Time",
 			FuelConsumptionPerMinute: "NaN",
+			ErrorMessage:             "Laps left in race unknown: BestLap is 0, impossible to calculate laps left based on lap time\nFuel needed to finish race unknown: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race\nFuel Div unknown: error getting fuel needed to finish race: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race",
 		}, s.GetMessage())
 	})
 
@@ -155,7 +158,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.LastData.LastLap = 3 * 60 * 1000 // 3 minutes
 		s.LastData.CurrentFuel = 20
 
-		s.SetManualSetRaceDuration(30)
+		s.SetManualSetRaceDuration(30 * time.Minute)
 		s.SetRaceStartTime(time.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
 
 		s.Laps = getReasonableLaps()

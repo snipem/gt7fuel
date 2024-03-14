@@ -4,6 +4,7 @@ import (
 	"fmt"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -85,6 +86,7 @@ const NoStartDetected = "Noch kein Start erfasst"
 func (s *Stats) GetMessage() interface{} {
 
 	timeSinceStart := ""
+	errorMessages := []string{}
 
 	if s.raceStartTime.IsZero() {
 		timeSinceStart = NoStartDetected
@@ -93,6 +95,27 @@ func (s *Stats) GetMessage() interface{} {
 	}
 
 	minTemp := math.Min(float64(s.LastData.TyreTempFL), math.Min(float64(s.LastData.TyreTempFR), math.Min(float64(s.LastData.TyreTempRR), float64(s.LastData.TyreTempRL))))
+	isValid := s.getValidState()
+
+	lapsLeftInRace, err := s.getLapsLeftInRace()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Laps left in race unknown: %v", err))
+		isValid = false
+	}
+
+	fuelNeededToFinishRaceInTotal, err := s.GetFuelNeededToFinishRaceInTotal()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Fuel needed to finish race unknown: %v", err))
+		isValid = false
+	}
+
+	fuelDiv, err := s.GetFuelDiv()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Fuel Div unknown: %v", err))
+		isValid = false
+	}
+
+	errorMessage := strings.Join(errorMessages, "\n")
 
 	message := Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
@@ -102,13 +125,14 @@ func (s *Stats) GetMessage() interface{} {
 		FuelConsumptionAvg:       fmt.Sprintf("%.2f", s.GetAverageFuelConsumption()),
 		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", s.GetFuelConsumptionPerMinute()),
 		TimeSinceStart:           timeSinceStart,
-		FuelNeededToFinishRace:   RoundUpAlways(s.GetFuelNeededToFinishRaceInTotal()),
-		LapsLeftInRace:           s.getLapsLeftInRace(),
+		FuelNeededToFinishRace:   RoundUpAlways(fuelNeededToFinishRaceInTotal),
+		LapsLeftInRace:           lapsLeftInRace,
 		EndOfRaceType:            s.getEndOfRaceType(),
-		FuelDiv:                  fmt.Sprintf("%.0f", s.GetFuelDiv()),
+		FuelDiv:                  fmt.Sprintf("%.0f", fuelDiv),
 		RaceTimeInMinutes:        int32(s.getRaceDuration().Minutes()),
-		ValidState:               s.getValidState(),
+		ValidState:               isValid,
 		LowestTireTemp:           float32(minTemp),
+		ErrorMessage:             errorMessage,
 	}
 	return message
 
@@ -138,12 +162,22 @@ func (s *Stats) getEndOfRaceType() string {
 	return endOfRaceType
 }
 
-func (s *Stats) getLapsLeftInRace() int16 {
+func (s *Stats) getLapsLeftInRace() (int16, error) {
+
 	if s.LastData.TotalLaps > 0 {
-		return s.LastData.TotalLaps - s.LastData.CurrentLap + 1 // because the current lap is ongoing
+		return s.LastData.TotalLaps - s.LastData.CurrentLap + 1, nil // because the current lap is ongoing
 	} else {
+
+		if s.LastData.BestLap == 0 {
+			return -1, fmt.Errorf("BestLap is 0, impossible to calculate laps left based on lap time")
+		}
+
 		bestLap := GetDurationFromGT7Time(s.LastData.BestLap)
-		return GetLapsLeftInRace(s.GetTimeSinceStart(), s.getRaceDuration(), bestLap)
+		lapsLeftInRace, err := GetLapsLeftInRace(s.GetTimeSinceStart(), s.getRaceDuration(), bestLap)
+		if err != nil {
+			return -1, fmt.Errorf("error getting laps left: %v", err)
+		}
+		return lapsLeftInRace, nil
 	}
 
 }
@@ -169,11 +203,10 @@ func (s *Stats) GetTimeSinceStart() time.Duration {
 	return time.Now().Sub(s.raceStartTime)
 }
 
-func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
+func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 
 	if s.LastData.BestLap == 0 || s.LastData.LastLap == 0 {
-		// FIXME: this should be better reflected
-		return 0
+		return -1, fmt.Errorf("BestLap or LastLap is 0, impossible to calculate fuel needed to finish race")
 	}
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
@@ -184,12 +217,16 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() float32 {
 		GetDurationFromGT7Time(s.LastData.LastLap),
 		s.getFuelConsumptionLastLap())
 
-	return fuelNeededToFinishRaceInTotal
+	return fuelNeededToFinishRaceInTotal, nil
 
 }
 
-func (s *Stats) GetFuelDiv() any {
-	fuelDiv := s.GetFuelNeededToFinishRaceInTotal() - s.LastData.CurrentFuel
-	return fuelDiv
+func (s *Stats) GetFuelDiv() (float32, error) {
+	fuelNeededToFinishRaceInTotal, err := s.GetFuelNeededToFinishRaceInTotal()
+	if err != nil {
+		return -1, fmt.Errorf("error getting fuel needed to finish race: %v", err)
+	}
+	fuelDiv := fuelNeededToFinishRaceInTotal - s.LastData.CurrentFuel
+	return fuelDiv, nil
 
 }

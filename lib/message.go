@@ -15,4 +15,5 @@ type Message struct {
 	EndOfRaceType            string  `json:"end_of_race_type"`
 	FuelConsumptionPerMinute string  `json:"fuel_consumption_per_minute"`
 	LowestTireTemp           float32 `json:"lowest_tire_temp"`
+	ErrorMessage             string  `json:"error_message"`
 }

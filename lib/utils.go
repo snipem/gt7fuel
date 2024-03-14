@@ -52,12 +52,12 @@ func getAccountableLaps(laps []Lap) []Lap {
 }
 
 // GetLapsLeftInRace calculates the number of laps left in a race based on the current time in the race, total duration of the race, and the best lap time.
-func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) int16 {
+func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) (int16, error) {
 	// Calculate the time left in the race with an extra lap
 	timeLeftWithExtraLap := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestLapTime)
 
 	if bestLapTime == 0 {
-		return 0
+		return -1, fmt.Errorf("best Lap is 0 impossible to calculate Laps left in Race")
 	}
 
 	// Calculate the number of laps left based on the time left with the best lap time
@@ -65,9 +65,9 @@ func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Durati
 
 	// If lapsLeft is negative, return 0, otherwise return lapsLeft as int16
 	if lapsLeft < 0 {
-		return 0
+		return 0, nil
 	}
-	return int16(lapsLeft)
+	return int16(lapsLeft), nil
 }
 
 // calculateFuelNeededToFinishRace calculates the fuel needed to finish the race.
