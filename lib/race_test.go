@@ -122,7 +122,9 @@ func Test_logTick(t *testing.T) {
 	assert.False(t, s.raceStartTime.IsZero()) // check if race start time has been logged
 
 	assert.Equal(t, float32(2.5), s.GetAverageFuelConsumption())
-	assert.Equal(t, time.Duration(2*time.Minute+30*time.Second), s.GetAverageLapTime())
+	averageLapTime, err := s.GetAverageLapTime()
+	assert.NoError(t, err)
+	assert.Equal(t, time.Duration(2*time.Minute+30*time.Second), averageLapTime)
 
 	// Start a new race
 	// First tick, pre race

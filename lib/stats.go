@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"github.com/jmhodges/clock"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"math"
 	"strings"
@@ -17,19 +18,22 @@ type Stats struct {
 	// transmitted over telemetry
 	ManualSetRaceDuration time.Duration
 	raceStartTime         time.Time
+	clock                 clock.Clock
 }
 
-func (s *Stats) getFuelConsumptionLastLap() float32 {
-	if len(s.Laps) < 2 {
-		return 0
+func (s *Stats) getFuelConsumptionLastLap() (float32, error) {
+	if len(s.Laps) < 1 {
+		return -1, fmt.Errorf("not enough laps to return fuel consumption of last lap, nr of laps: %d", len(s.Laps))
 	}
-	return s.Laps[len(s.Laps)-2].FuelConsumed
+	return s.Laps[len(s.Laps)-1].FuelConsumed, nil
 }
 
 func NewStats() *Stats {
 	s := Stats{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
+	// set a proper clock
+	s.setClock(clock.New())
 	return &s
 }
 
@@ -51,7 +55,7 @@ func (s *Stats) Reset() {
 	s.LastData = &gt7.GTData{}
 
 	// Set empty ongoing lap
-	s.raceStartTime = time.Now()
+	s.raceStartTime = s.clock.Now()
 }
 func (s *Stats) GetAverageFuelConsumption() float32 {
 	var totalFuelConsumption float32
@@ -63,11 +67,15 @@ func (s *Stats) GetAverageFuelConsumption() float32 {
 	return totalFuelConsumption / float32(len(lapsAccountable))
 }
 
-func (s *Stats) GetFuelConsumptionPerMinute() float32 {
-	return s.GetAverageFuelConsumption() / float32(s.GetAverageLapTime().Minutes())
+func (s *Stats) GetFuelConsumptionPerMinute() (float32, error) {
+	averageLapTime, err := s.GetAverageLapTime()
+	if err != nil {
+		return -1, fmt.Errorf("error getting average lap time: %v", err)
+	}
+	return s.GetAverageFuelConsumption() / float32(averageLapTime.Minutes()), nil
 }
 
-func (s *Stats) GetAverageLapTime() time.Duration {
+func (s *Stats) GetAverageLapTime() (time.Duration, error) {
 	var totalDuration time.Duration
 	accountableLaps := getAccountableLaps(s.Laps)
 	for _, lap := range accountableLaps {
@@ -75,10 +83,10 @@ func (s *Stats) GetAverageLapTime() time.Duration {
 	}
 
 	if len(accountableLaps) == 0 {
-		return 0
+		return time.Duration(0), fmt.Errorf("no accounatble laps found")
 	}
 
-	return totalDuration / time.Duration(len(accountableLaps))
+	return totalDuration / time.Duration(len(accountableLaps)), nil
 }
 
 const NoStartDetected = "Noch kein Start erfasst"
@@ -117,13 +125,24 @@ func (s *Stats) GetMessage() interface{} {
 
 	errorMessage := strings.Join(errorMessages, "\n")
 
+	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Fuel Consumption last lap unknown: %v", err))
+		isValid = false
+	}
+	fuelConsumptionPerMinute, err := s.GetFuelConsumptionPerMinute()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Fuel Consumption per minute unknown: %v", err))
+		isValid = false
+	}
+
 	message := Message{
 		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                s.LastData.PackageID,
 		FuelLeft:                 fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
-		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", s.getFuelConsumptionLastLap()),
+		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", fuelConsumptionLastLap),
 		FuelConsumptionAvg:       fmt.Sprintf("%.2f", s.GetAverageFuelConsumption()),
-		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", s.GetFuelConsumptionPerMinute()),
+		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", fuelConsumptionPerMinute),
 		TimeSinceStart:           timeSinceStart,
 		FuelNeededToFinishRace:   RoundUpAlways(fuelNeededToFinishRaceInTotal),
 		LapsLeftInRace:           lapsLeftInRace,
@@ -141,7 +160,11 @@ func (s *Stats) GetMessage() interface{} {
 func (s *Stats) getValidState() bool {
 	validState := false
 
-	if s.GetTimeSinceStart() < 1000*time.Hour && s.getFuelConsumptionLastLap() >= 0 {
+	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
+	if err != nil {
+		validState = false
+	}
+	if s.GetTimeSinceStart() < 1000*time.Hour && fuelConsumptionLastLap >= 0 {
 		validState = true
 	}
 
@@ -200,7 +223,11 @@ func (s *Stats) SetRaceStartTime(startTime time.Time) {
 }
 
 func (s *Stats) GetTimeSinceStart() time.Duration {
-	return time.Now().Sub(s.raceStartTime)
+	return s.clock.Now().Sub(s.raceStartTime)
+}
+
+func (s *Stats) setClock(clock clock.Clock) {
+	s.clock = clock
 }
 
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
@@ -210,12 +237,17 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 	}
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
+	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
+	if err != nil {
+		return -1, fmt.Errorf("error getting fuel consumption last lap: %v", err)
+	}
+
 	fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
 		s.GetTimeSinceStart(),
 		s.getRaceDuration(),
 		GetDurationFromGT7Time(s.LastData.BestLap),
 		GetDurationFromGT7Time(s.LastData.LastLap),
-		s.getFuelConsumptionLastLap())
+		fuelConsumptionLastLap)
 
 	return fuelNeededToFinishRaceInTotal, nil
 

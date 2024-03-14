@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/gorilla/websocket v1.5.1
+	github.com/jmhodges/clock v1.2.0
 	github.com/snipem/go-gt7-telemetry v0.0.0-20240223192929-92e96677ac1e
 	github.com/stretchr/testify v1.8.4
 )

@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"github.com/jmhodges/clock"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ func Test_getAverageFuelConsumptionPerMinute(t *testing.T) {
 		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
 	}
 	assert.Len(t, getAccountableLaps(gt7stats.Laps), 2)
-	avg := gt7stats.GetFuelConsumptionPerMinute()
+	avg, _ := gt7stats.GetFuelConsumptionPerMinute()
 
 	// 30 avg fuel per lap / 1,5 avg duration = 20 fuel per minute
 	assert.Equal(t, float32(20), avg)
@@ -47,7 +48,9 @@ func TestStats_GetAverageLapTime(t *testing.T) {
 			{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
 			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
 		}
-		assert.Equal(t, float64(90), gt7stats.GetAverageLapTime().Seconds())
+		averageLapTime, err := gt7stats.GetAverageLapTime()
+		assert.NoError(t, err)
+		assert.Equal(t, float64(90), averageLapTime.Seconds())
 	})
 
 	t.Run("GetAverageLapTimeWithNoLaps", func(t *testing.T) {
@@ -59,7 +62,9 @@ func TestStats_GetAverageLapTime(t *testing.T) {
 			{FuelConsumed: -40, Number: 2, Duration: 90 * time.Second},
 			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
 		}
-		assert.Equal(t, float64(0), gt7stats.GetAverageLapTime().Seconds())
+		averageLapTime, err := gt7stats.GetAverageLapTime()
+		assert.Error(t, err)
+		assert.Equal(t, time.Duration(0), averageLapTime)
 	})
 }
 
@@ -132,11 +137,12 @@ func TestStats_getEndOfRaceType(t *testing.T) {
 func TestStats_GetMessage(t *testing.T) {
 	t.Run("No start yet", func(t *testing.T) {
 		s := NewStats()
+		s.setClock(clock.NewFake())
 		assert.Equal(t, Message{
 			Speed:                    "0",
 			PackageID:                0,
 			FuelLeft:                 "0.00",
-			FuelConsumptionLastLap:   "0.00",
+			FuelConsumptionLastLap:   "-1.00",
 			TimeSinceStart:           NoStartDetected,
 			FuelNeededToFinishRace:   -1,
 			FuelConsumptionAvg:       "NaN",
@@ -145,13 +151,15 @@ func TestStats_GetMessage(t *testing.T) {
 			ValidState:               false,
 			LapsLeftInRace:           -1,
 			EndOfRaceType:            "By Time",
-			FuelConsumptionPerMinute: "NaN",
+			FuelConsumptionPerMinute: "-1.00",
 			ErrorMessage:             "Laps left in race unknown: BestLap is 0, impossible to calculate laps left based on lap time\nFuel needed to finish race unknown: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race\nFuel Div unknown: error getting fuel needed to finish race: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race",
 		}, s.GetMessage())
 	})
 
 	t.Run("Start 10 Minutes ago, 30 Minutes Race", func(t *testing.T) {
 		s := NewStats()
+		fakeClock := clock.NewFake()
+		s.setClock(fakeClock)
 		s.LastData.CarSpeed = 100
 		s.LastData.PackageID = 4711
 		s.LastData.BestLap = 3 * 60 * 1000 // 3 minutes
@@ -159,7 +167,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.LastData.CurrentFuel = 20
 
 		s.SetManualSetRaceDuration(30 * time.Minute)
-		s.SetRaceStartTime(time.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
+		s.SetRaceStartTime(fakeClock.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
 
 		s.Laps = getReasonableLaps()
 
@@ -167,11 +175,11 @@ func TestStats_GetMessage(t *testing.T) {
 			Speed:                    "100",
 			PackageID:                4711,
 			FuelLeft:                 "20.00",
-			FuelConsumptionLastLap:   "50.00",
+			FuelConsumptionLastLap:   "25.00",
 			TimeSinceStart:           "10:00.500",
-			FuelNeededToFinishRace:   384,
+			FuelNeededToFinishRace:   192,
 			FuelConsumptionAvg:       "25.00",
-			FuelDiv:                  "363",
+			FuelDiv:                  "172",
 			RaceTimeInMinutes:        30,
 			ValidState:               true,
 			LapsLeftInRace:           7,
@@ -182,6 +190,8 @@ func TestStats_GetMessage(t *testing.T) {
 
 	t.Run("Start 10 Minutes ago with 10 Laps in Total", func(t *testing.T) {
 		s := NewStats()
+		fakeClock := clock.NewFake()
+		s.setClock(fakeClock)
 		s.LastData.CarSpeed = 100
 		s.LastData.PackageID = 4711
 		s.LastData.TotalLaps = 10
@@ -189,7 +199,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.LastData.LastLap = 3 * 60 * 1000 // 3 minutes
 		s.LastData.CurrentFuel = 20
 
-		s.SetRaceStartTime(time.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
+		s.SetRaceStartTime(fakeClock.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
 
 		s.Laps = getReasonableLaps()
 
@@ -197,11 +207,11 @@ func TestStats_GetMessage(t *testing.T) {
 			Speed:                    "100",
 			PackageID:                4711,
 			FuelLeft:                 "20.00",
-			FuelConsumptionLastLap:   "50.00",
+			FuelConsumptionLastLap:   "25.00",
 			TimeSinceStart:           "10:00.500",
-			FuelNeededToFinishRace:   384,
+			FuelNeededToFinishRace:   192,
 			FuelConsumptionAvg:       "25.00",
-			FuelDiv:                  "363",
+			FuelDiv:                  "172",
 			RaceTimeInMinutes:        30, // total laps * best lap
 			ValidState:               true,
 			LapsLeftInRace:           11,
