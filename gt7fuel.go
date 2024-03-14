@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var GitCommit string
+
 var gt7c *gt7.GT7Communication
 var gt7stats *lib.Stats
 var raceTimeInMinutes int
@@ -107,6 +109,8 @@ func setupRoutes() {
 }
 
 func main() {
+
+	fmt.Printf("Version: https://github.com/snipem/gt7fuel/commit/%s\n", GitCommit)
 
 	raceTimeInMinutes = 60
 	for {
