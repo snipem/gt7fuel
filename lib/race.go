@@ -58,6 +58,7 @@ func resetOngoingLap(ld *gt7.GTData, gt7stats *Stats) {
 	gt7stats.OngoingLap = Lap{
 		FuelStart: ld.CurrentFuel,
 		Number:    ld.CurrentLap,
+		LapStart:  gt7stats.clock.Now(),
 	}
 }
 
@@ -74,8 +75,5 @@ func finishLap(ld *gt7.GTData, gt7stats *Stats) {
 	log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.OngoingLap)
 
 	gt7stats.Laps = append(gt7stats.Laps, gt7stats.OngoingLap)
-	gt7stats.OngoingLap = Lap{
-		FuelStart: ld.CurrentFuel,
-		Number:    ld.CurrentLap,
-	}
+	resetOngoingLap(ld, gt7stats)
 }

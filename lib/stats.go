@@ -45,6 +45,7 @@ type Lap struct {
 	FuelConsumed float32
 	Number       int16
 	Duration     time.Duration
+	LapStart     time.Time
 }
 
 func (l Lap) String() string {
@@ -59,14 +60,19 @@ func (s *Stats) Reset() {
 	// Set empty ongoing lap
 	s.raceStartTime = s.clock.Now()
 }
-func (s *Stats) GetAverageFuelConsumption() float32 {
+func (s *Stats) GetAverageFuelConsumptionPerLap() (avgFuelConsumption float32, err error) {
 	var totalFuelConsumption float32
 	lapsAccountable := GetAccountableFuelConsumption(s.Laps)
 
 	for _, f := range lapsAccountable {
 		totalFuelConsumption += f
 	}
-	return totalFuelConsumption / float32(len(lapsAccountable))
+
+	if len(lapsAccountable) == 0 {
+		return -1, fmt.Errorf("no accountable laps found")
+	}
+
+	return totalFuelConsumption / float32(len(lapsAccountable)), err
 }
 
 func (s *Stats) GetFuelConsumptionPerMinute() (float32, error) {
@@ -74,7 +80,13 @@ func (s *Stats) GetFuelConsumptionPerMinute() (float32, error) {
 	if err != nil {
 		return -1, fmt.Errorf("error getting average lap time: %v", err)
 	}
-	return s.GetAverageFuelConsumption() / float32(averageLapTime.Minutes()), nil
+
+	avgFuelConsumption, err := s.GetAverageFuelConsumptionPerLap()
+	if err != nil {
+		return -1, fmt.Errorf("error getting average fuel consumption: %v", err)
+	}
+
+	return avgFuelConsumption / float32(averageLapTime.Minutes()), nil
 }
 
 func (s *Stats) GetAverageLapTime() (time.Duration, error) {
@@ -141,22 +153,42 @@ func (s *Stats) GetMessage() interface{} {
 		isValid = false
 	}
 
+	avgFuelConsumption, err := s.GetAverageFuelConsumptionPerLap()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Avg Fuel Consumption unknown: %v", err))
+		isValid = false
+	}
+
+	nextPitStop, err := s.GetNextNecessaryPitStopInLap()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Next Pit Stop unknown: %v", err))
+		isValid = false
+	}
+
+	currentLapProgressAdjusted, err := s.GetProgressAdjustedCurrentLap()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Current Lap Progress unknown: %v", err))
+		isValid = false
+	}
+
 	message := Message{
-		Speed:                    fmt.Sprintf("%.0f", s.LastData.CarSpeed),
-		PackageID:                s.LastData.PackageID,
-		FuelLeft:                 fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
-		FuelConsumptionLastLap:   fmt.Sprintf("%.2f", fuelConsumptionLastLap),
-		FuelConsumptionAvg:       fmt.Sprintf("%.2f", s.GetAverageFuelConsumption()),
-		FuelConsumptionPerMinute: fmt.Sprintf("%.2f", fuelConsumptionPerMinute),
-		TimeSinceStart:           timeSinceStart,
-		FuelNeededToFinishRace:   RoundUpAlways(fuelNeededToFinishRaceInTotal),
-		LapsLeftInRace:           lapsLeftInRace,
-		EndOfRaceType:            s.getEndOfRaceType(),
-		FuelDiv:                  fmt.Sprintf("%.0f", fuelDiv),
-		RaceTimeInMinutes:        int32(s.getRaceDuration().Minutes()),
-		ValidState:               isValid,
-		LowestTireTemp:           float32(minTemp),
-		ErrorMessage:             errorMessage,
+		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
+		PackageID:                  s.LastData.PackageID,
+		FuelLeft:                   fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
+		FuelConsumptionLastLap:     fmt.Sprintf("%.2f", fuelConsumptionLastLap),
+		FuelConsumptionAvg:         fmt.Sprintf("%.2f", avgFuelConsumption),
+		FuelConsumptionPerMinute:   fmt.Sprintf("%.2f", fuelConsumptionPerMinute),
+		TimeSinceStart:             timeSinceStart,
+		FuelNeededToFinishRace:     RoundUpAlways(fuelNeededToFinishRaceInTotal),
+		LapsLeftInRace:             lapsLeftInRace,
+		EndOfRaceType:              s.getEndOfRaceType(),
+		FuelDiv:                    fmt.Sprintf("%.0f", fuelDiv),
+		RaceTimeInMinutes:          int32(s.getRaceDuration().Minutes()),
+		ValidState:                 isValid,
+		LowestTireTemp:             float32(minTemp),
+		ErrorMessage:               errorMessage,
+		NextPitStop:                fmt.Sprintf("%.0f", nextPitStop),
+		CurrentLapProgressAdjusted: fmt.Sprintf("%.0f", currentLapProgressAdjusted),
 	}
 	return message
 
@@ -202,11 +234,11 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 		return s.LastData.TotalLaps - s.LastData.CurrentLap + 1, nil // because the current lap is ongoing
 	} else {
 
-		if s.LastData.BestLap == 0 {
+		bestLap, err := s.getBestLap()
+		if err != nil {
 			return -1, fmt.Errorf("BestLap is 0, impossible to calculate laps left based on lap time")
 		}
 
-		bestLap := GetDurationFromGT7Time(s.LastData.BestLap)
 		durationSinceStart, err := s.GetDurationSinceStart()
 		if err != nil {
 			return -1, fmt.Errorf("error getting duration since start: %v", err)
@@ -220,12 +252,76 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 	}
 
 }
+
+func (s *Stats) getBestLap() (time.Duration, error) {
+
+	if s.LastData.BestLap == 0 {
+		return 0, fmt.Errorf("BestLap is 0, impossible to calculate best lap")
+	}
+
+	bestLap := GetDurationFromGT7Time(s.LastData.BestLap)
+	return bestLap, nil
+}
+
+func (s *Stats) getTotalLapsInRace() (int16, error) {
+
+	if s.LastData.TotalLaps > 0 {
+		return s.LastData.TotalLaps, nil
+	}
+
+	bestLap, err := s.getBestLap()
+	if err != nil {
+		return -1, fmt.Errorf("BestLap is 0, impossible to calculate total laps based on lap time")
+	}
+
+	// we assume the race hos not started yet to get the total number of laps
+
+	lapsLeftInRace, err := GetLapsLeftInRace(time.Duration(0), s.getRaceDuration(), bestLap)
+	if err != nil {
+		return -1, fmt.Errorf("error getting laps left: %v", err)
+	}
+	return lapsLeftInRace, nil
+}
 func (s *Stats) getRaceDuration() time.Duration {
 	if s.LastData.TotalLaps > 0 {
 		return GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
 	} else {
 		return s.ManualSetRaceDuration
 	}
+}
+
+func (s *Stats) GetNextNecessaryPitStopInLap() (float32, error) {
+
+	avgFuelConsumptionPerLap, err := s.GetAverageFuelConsumptionPerLap()
+	if err != nil {
+		return -1, fmt.Errorf("error getting average fuel consumption per lap: %v", err)
+	}
+	currentFuel := s.LastData.CurrentFuel
+
+	lapsToGo := currentFuel / avgFuelConsumptionPerLap
+	progressAdjustedCurrentLap, err := s.GetProgressAdjustedCurrentLap()
+	if err != nil {
+		return -1, fmt.Errorf("error getting next neccessary pit stop: %v", err)
+	}
+
+	return float32(progressAdjustedCurrentLap + lapsToGo), nil
+}
+
+func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
+
+	if s.OngoingLap.LapStart.IsZero() {
+		return float32(-1), fmt.Errorf("LapStart is Zero, impossible to calculate Lap progress")
+	}
+
+	durationInCurrentLap := s.clock.Now().Sub(s.OngoingLap.LapStart)
+
+	bestLap, err := s.getBestLap()
+	if err != nil {
+		return -1, fmt.Errorf("impossible to calculate progress adjusted current lap: %v", err)
+	}
+	relativeProgressCurrentLap := float32(durationInCurrentLap) / float32(bestLap)
+
+	return float32(s.LastData.CurrentLap) + relativeProgressCurrentLap, nil
 
 }
 

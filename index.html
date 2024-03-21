@@ -97,11 +97,11 @@
 
 <div class="row">
     <div class="column titles">
-        zusätzlich noch
+        an Sprit noch
     </div>
     <div class="column" id="fuel_needed_to_finish_race"></div>
     <div class="column titles">
-        Sprit nötig
+        im Tank nötig
     </div>
 </div>
 
@@ -109,6 +109,9 @@
     <div class="stats_column">
         <b>Nachzutankender Sprit zum Abschluss des Rennens</b>
         <div id="fuel_div"></div>
+
+        <b>Nächster Muss-Boxenstop in Runde</b>
+        <div id="next_pit_stop"></div>
 
         <!--        <b>Sprit nötig um Rennen zu beenden</b>-->
         <!--        <div id="fuel_needed_to_finish_race"></div>-->
@@ -131,6 +134,9 @@
 
         <b>Dauer Rennen</b>
         <div id="time_since_start"></div>
+
+        <b>Anteiliger Rundenfortschritt</b>
+        <div id="current_lap_progress_adjusted"></div>
 
         <b>Renn-Typ</b>
         <div id="end_of_race_type"></div>
@@ -184,6 +190,8 @@
         fuel_needed_to_finish_race.textContent = data.fuel_needed_to_finish_race + " %";
         end_of_race_type.textContent = data.end_of_race_type;
         fuel_consumption_per_minute.textContent = data.fuel_consumption_per_minute;
+        next_pit_stop.textContent = data.next_pit_stop;
+        current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
 
         if (!data.valid_state) {
             document.body.style.background = "#947b00";
