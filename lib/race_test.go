@@ -101,7 +101,7 @@ func Test_logTick(t *testing.T) {
 	// Race Start Start Lap 1
 	ld.CurrentFuel = 98
 	ld.LastLap = 0
-	ld.CurrentLap = 1 // RACE START FROM NO ON!
+	ld.CurrentLap = 1 // RACE START FROM NOW ON!
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0) // Should have lap now, the ongoing

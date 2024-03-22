@@ -182,7 +182,7 @@ func TestStats_GetMessage(t *testing.T) {
 			EndOfRaceType:              "By Time",
 			FuelConsumptionPerMinute:   "-1.00",
 			ErrorMessage:               "Laps left in race unknown: BestLap is 0, impossible to calculate laps left based on lap time\nFuel needed to finish race unknown: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race\nFuel Div unknown: error getting fuel needed to finish race: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race",
-			NextPitStop:                "-1",
+			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "-1",
 		}, s.GetMessage())
 	})
@@ -192,6 +192,7 @@ func TestStats_GetMessage(t *testing.T) {
 		fakeClock := clock.NewFake()
 		s.setClock(fakeClock)
 		s.LastData.CarSpeed = 100
+		s.LastData.CurrentLap = 5
 		s.LastData.PackageID = 4711
 		s.LastData.BestLap = 3 * 60 * 1000 // 3 minutes
 		s.LastData.LastLap = 3 * 60 * 1000 // 3 minutes
@@ -217,8 +218,8 @@ func TestStats_GetMessage(t *testing.T) {
 			LapsLeftInRace:             7,
 			EndOfRaceType:              "By Time",
 			FuelConsumptionPerMinute:   "16.67",
-			NextPitStop:                "1",
-			CurrentLapProgressAdjusted: "0",
+			NextPitStop:                5,
+			CurrentLapProgressAdjusted: "5",
 			ErrorMessage:               "",
 		}, s.GetMessage())
 	})
@@ -233,6 +234,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.LastData.BestLap = 3 * 60 * 1000 // 3 minutes
 		s.LastData.LastLap = 3 * 60 * 1000 // 3 minutes
 		s.LastData.CurrentFuel = 20
+		s.LastData.CurrentLap = 5
 
 		s.SetRaceStartTime(fakeClock.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
 
@@ -250,11 +252,11 @@ func TestStats_GetMessage(t *testing.T) {
 			FuelDiv:                    "172",
 			RaceTimeInMinutes:          30, // total laps * best lap
 			ValidState:                 true,
-			LapsLeftInRace:             11,
+			LapsLeftInRace:             6,
 			EndOfRaceType:              ByLaps,
 			FuelConsumptionPerMinute:   "16.67",
-			NextPitStop:                "1",
-			CurrentLapProgressAdjusted: "0",
+			NextPitStop:                5,
+			CurrentLapProgressAdjusted: "5",
 		}, s.GetMessage())
 	})
 
@@ -294,7 +296,7 @@ func TestStats_GetMessage(t *testing.T) {
 			EndOfRaceType:              "By Time",
 			FuelConsumptionPerMinute:   "0.00",
 			ErrorMessage:               "",
-			NextPitStop:                "+Inf",
+			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "0",
 		}, s.GetMessage())
 	})
@@ -377,6 +379,22 @@ func TestStats_GetProgressAdjustedCurrentLap(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, float32(2.5), currentProgress)
 	})
+	t.Run("Total Time", func(t *testing.T) {
+		s := NewStats()
+		fakeClock := clock.NewFake()
+		s.setClock(fakeClock)
+		s.LastData.TotalLaps = 10
+		s.LastData.CurrentLap = 2
+		s.LastData.BestLap = 2 * 60 * 1000 // 2 minutes
+		s.OngoingLap = getReasonableOngoingLap()
+		s.OngoingLap.LapStart = clock.NewFake().Now().Add(-(10 * time.Minute)) // 10 minutes and going in current lap
+		s.Laps = getReasonableLaps()
+
+		currentProgress, err := s.GetProgressAdjustedCurrentLap()
+
+		assert.NoError(t, err)
+		assert.Less(t, currentProgress, float32(3)) // Should still be lower than 3
+	})
 }
 
 func TestStats_GetNextNecessaryPitStopInLap(t *testing.T) {
@@ -390,8 +408,33 @@ func TestStats_GetNextNecessaryPitStopInLap(t *testing.T) {
 	s.LastData.CurrentLap = 2
 	s.LastData.BestLap = 2 * 60 * 1000 // 2 minutes
 
-	lap, err := s.GetNextNecessaryPitStopInLap()
+	lap, err := s.GetNextNecessaryPitStopAtEndOfLap()
 	assert.NoError(t, err)
-	assert.Equal(t, float32(2.5), lap)
+	assert.Equal(t, int(2), lap)
 
+}
+
+func Test_getDurationInLap(t *testing.T) {
+	t.Run("Total Laps", func(t *testing.T) {
+		lap, err := getDurationInLap(time.Duration(3)*time.Minute, time.Duration(4)*time.Minute, 0)
+		assert.NoError(t, err)
+		assert.Equal(t, float32(0.74999994), lap)
+	})
+
+	t.Run("Total Laps - Slow Lap", func(t *testing.T) {
+		lap, err := getDurationInLap(time.Duration(5)*time.Minute, time.Duration(4)*time.Minute, 0)
+		assert.NoError(t, err)
+		assert.Less(t, lap, float32(1))
+	})
+}
+
+func Test_getNextPitStop(t *testing.T) {
+	// now: 3.5l at Lap 5 + 0.5, with 3l consumption per lap should pit at end of lap 5
+	assert.Equal(t, 5, getNextPitStop(3.5, 3, 5.5), "Simple")
+	// now: 3.5l at Lap 5 close to finish, with 3l consumption per lap should pit at end of lap 6
+	assert.Equal(t, 6, getNextPitStop(3.5, 3, 5.9), "Simple")
+
+	assert.Equal(t, 0, getNextPitStop(0, 5, 0.5), "Simple")
+	assert.Equal(t, 25, getNextPitStop(100, 5, 5.5), "Simple")
+	assert.Equal(t, -1, getNextPitStop(100, 0, 5.5), "Simple")
 }

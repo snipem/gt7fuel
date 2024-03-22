@@ -159,7 +159,7 @@ func (s *Stats) GetMessage() interface{} {
 		isValid = false
 	}
 
-	nextPitStop, err := s.GetNextNecessaryPitStopInLap()
+	nextPitStop, err := s.GetNextNecessaryPitStopAtEndOfLap()
 	if err != nil {
 		errorMessages = append(errorMessages, fmt.Sprintf("Next Pit Stop unknown: %v", err))
 		isValid = false
@@ -187,7 +187,7 @@ func (s *Stats) GetMessage() interface{} {
 		ValidState:                 isValid,
 		LowestTireTemp:             float32(minTemp),
 		ErrorMessage:               errorMessage,
-		NextPitStop:                fmt.Sprintf("%.0f", nextPitStop),
+		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.0f", currentLapProgressAdjusted),
 	}
 	return message
@@ -290,21 +290,59 @@ func (s *Stats) getRaceDuration() time.Duration {
 	}
 }
 
-func (s *Stats) GetNextNecessaryPitStopInLap() (float32, error) {
+func (s *Stats) GetNextNecessaryPitStopAtEndOfLap() (int, error) {
 
 	avgFuelConsumptionPerLap, err := s.GetAverageFuelConsumptionPerLap()
 	if err != nil {
 		return -1, fmt.Errorf("error getting average fuel consumption per lap: %v", err)
 	}
-	currentFuel := s.LastData.CurrentFuel
-
-	lapsToGo := currentFuel / avgFuelConsumptionPerLap
 	progressAdjustedCurrentLap, err := s.GetProgressAdjustedCurrentLap()
 	if err != nil {
 		return -1, fmt.Errorf("error getting next neccessary pit stop: %v", err)
 	}
+	nextPitStop := getNextPitStop(s.LastData.CurrentFuel, avgFuelConsumptionPerLap, progressAdjustedCurrentLap)
+	return nextPitStop, nil
+}
 
-	return float32(progressAdjustedCurrentLap + lapsToGo), nil
+func getNextPitStop(currentFuel float32, avgFuelConsumptionPerLap float32, progressAdjustedCurrentLap float32) int {
+	if avgFuelConsumptionPerLap == 0 {
+		return -1
+	}
+
+	currentFuel64 := float64(currentFuel)
+	avgFuelConsumptionPerLap64 := float64(avgFuelConsumptionPerLap)
+	progressAdjustedCurrentLap64 := float64(progressAdjustedCurrentLap)
+
+	progressInCurrentLap := math.Ceil(progressAdjustedCurrentLap64) - progressAdjustedCurrentLap64
+
+	fuelNeededToFinishCurrentLap := avgFuelConsumptionPerLap64 * progressInCurrentLap
+
+	currentLapFloor := math.Floor(progressAdjustedCurrentLap64)
+
+	// It is not possible to attempt another lap
+	if currentFuel64 <= fuelNeededToFinishCurrentLap+avgFuelConsumptionPerLap64 {
+		return int(currentLapFloor)
+	}
+	nextPitStop := currentLapFloor + (currentFuel64 / avgFuelConsumptionPerLap64)
+
+	return int(math.Floor(nextPitStop))
+
+	//print(fuelNeededToFinishCurrentLap)
+
+	//currentLapFloor := math.Floor(float64(progressAdjustedCurrentLap))
+	//
+	//// 3.5 > 3 --> current lap
+	//if currentFuel > avgFuelConsumptionPerLap {
+	//	fuelLeftForNumberOfLaps := currentFuel / avgFuelConsumptionPerLap
+	//	return int(currentLapFloor + math.Floor(float64(fuelLeftForNumberOfLaps)))
+	//} else {
+	//	return int(currentLapFloor)
+	//}
+	//
+	////ceilOfCurrentLap := math.Floor(float64(progressAdjustedCurrentLap))
+	////ceilOfFullLapsLeft := math.Floor(float64(fuelLeftForNumberOfLaps - 1))
+	////kk
+	//return 0
 }
 
 func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
@@ -319,10 +357,18 @@ func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
 	if err != nil {
 		return -1, fmt.Errorf("impossible to calculate progress adjusted current lap: %v", err)
 	}
+	return getDurationInLap(durationInCurrentLap, bestLap, s.LastData.CurrentLap)
+
+}
+
+func getDurationInLap(durationInCurrentLap time.Duration, bestLap time.Duration, currentLap int16) (float32, error) {
 	relativeProgressCurrentLap := float32(durationInCurrentLap) / float32(bestLap)
 
-	return float32(s.LastData.CurrentLap) + relativeProgressCurrentLap, nil
+	if relativeProgressCurrentLap > 1 {
+		relativeProgressCurrentLap = 0.99
+	}
 
+	return float32(currentLap) + relativeProgressCurrentLap, nil
 }
 
 func (s *Stats) SetManualSetRaceDuration(duration time.Duration) {
