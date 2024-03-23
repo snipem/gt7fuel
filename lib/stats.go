@@ -171,6 +171,12 @@ func (s *Stats) GetMessage() interface{} {
 		isValid = false
 	}
 
+	raceduration, err := s.getRaceDuration()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Raceduration unknown: %v", err))
+		isValid = false
+	}
+
 	message := Message{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                  s.LastData.PackageID,
@@ -183,12 +189,12 @@ func (s *Stats) GetMessage() interface{} {
 		LapsLeftInRace:             lapsLeftInRace,
 		EndOfRaceType:              s.getEndOfRaceType(),
 		FuelDiv:                    fmt.Sprintf("%.0f", fuelDiv),
-		RaceTimeInMinutes:          int32(s.getRaceDuration().Minutes()),
+		RaceTimeInMinutes:          int32(raceduration.Minutes()),
 		ValidState:                 isValid,
 		LowestTireTemp:             float32(minTemp),
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
-		CurrentLapProgressAdjusted: fmt.Sprintf("%.0f", currentLapProgressAdjusted),
+		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
 	}
 	return message
 
@@ -197,17 +203,12 @@ func (s *Stats) GetMessage() interface{} {
 func (s *Stats) getValidState() bool {
 	validState := true
 
-	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
-	if err != nil {
-		validState = false
-	}
-
 	durationSinceStart, err := s.GetDurationSinceStart()
 	if err != nil {
 		validState = false
 	}
 
-	if durationSinceStart > 1000*time.Hour || fuelConsumptionLastLap < 0 {
+	if durationSinceStart > 1000*time.Hour {
 		validState = false
 	}
 
@@ -234,9 +235,9 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 		return s.LastData.TotalLaps - s.LastData.CurrentLap + 1, nil // because the current lap is ongoing
 	} else {
 
-		bestLap, err := s.getBestLap()
+		bestLap, err := s.getReferenceLap()
 		if err != nil {
-			return -1, fmt.Errorf("BestLap is 0, impossible to calculate laps left based on lap time")
+			return -1, fmt.Errorf("ReferenceLap is 0, impossible to calculate laps left based on lap time")
 		}
 
 		durationSinceStart, err := s.GetDurationSinceStart()
@@ -244,7 +245,12 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 			return -1, fmt.Errorf("error getting duration since start: %v", err)
 		}
 
-		lapsLeftInRace, err := GetLapsLeftInRace(durationSinceStart, s.getRaceDuration(), bestLap)
+		raceDuration, err := s.getRaceDuration()
+		if err != nil {
+			return -1, fmt.Errorf("error getting duration since start: %v", err)
+		}
+
+		lapsLeftInRace, err := GetLapsLeftInRace(durationSinceStart, raceDuration, bestLap)
 		if err != nil {
 			return -1, fmt.Errorf("error getting laps left: %v", err)
 		}
@@ -255,12 +261,33 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 
 func (s *Stats) getBestLap() (time.Duration, error) {
 
-	if s.LastData.BestLap == 0 {
-		return 0, fmt.Errorf("BestLap is 0, impossible to calculate best lap")
+	if s.LastData.BestLap < 0 {
+		return 0, fmt.Errorf("BestLap is %d, impossible to calculate best lap", s.LastData.BestLap)
 	}
 
 	bestLap := GetDurationFromGT7Time(s.LastData.BestLap)
 	return bestLap, nil
+}
+
+func (s *Stats) getLastLap() (time.Duration, error) {
+
+	if s.LastData.LastLap < 0 {
+		return 0, fmt.Errorf("LastLap is %d, impossible to calculate last lap", s.LastData.LastLap)
+	}
+
+	lastLap := GetDurationFromGT7Time(s.LastData.LastLap)
+	return lastLap, nil
+}
+
+func (s *Stats) getReferenceLap() (time.Duration, error) {
+	referenceLap, err := s.getBestLap()
+	if err != nil {
+		referenceLap, err = s.getLastLap()
+		if err != nil {
+			return -1, fmt.Errorf("error getting reference lap, both BestLap and LastLap are <0: %v", err)
+		}
+	}
+	return referenceLap, nil
 }
 
 func (s *Stats) getTotalLapsInRace() (int16, error) {
@@ -269,24 +296,33 @@ func (s *Stats) getTotalLapsInRace() (int16, error) {
 		return s.LastData.TotalLaps, nil
 	}
 
-	bestLap, err := s.getBestLap()
+	bestLap, err := s.getReferenceLap()
 	if err != nil {
 		return -1, fmt.Errorf("BestLap is 0, impossible to calculate total laps based on lap time")
 	}
 
+	raceDuration, err := s.getRaceDuration()
+	if err != nil {
+		return -1, fmt.Errorf("error getting duration since start: %v", err)
+	}
+
 	// we assume the race hos not started yet to get the total number of laps
 
-	lapsLeftInRace, err := GetLapsLeftInRace(time.Duration(0), s.getRaceDuration(), bestLap)
+	lapsLeftInRace, err := GetLapsLeftInRace(time.Duration(0), raceDuration, bestLap)
 	if err != nil {
 		return -1, fmt.Errorf("error getting laps left: %v", err)
 	}
 	return lapsLeftInRace, nil
 }
-func (s *Stats) getRaceDuration() time.Duration {
+func (s *Stats) getRaceDuration() (time.Duration, error) {
 	if s.LastData.TotalLaps > 0 {
-		return GetDurationFromGT7Time(s.LastData.BestLap) * time.Duration(s.LastData.TotalLaps)
+		referenceLap, err := s.getReferenceLap()
+		if err != nil {
+			return 0, fmt.Errorf("error getting reference lap: %v", err)
+		}
+		return referenceLap * time.Duration(s.LastData.TotalLaps), nil
 	} else {
-		return s.ManualSetRaceDuration
+		return s.ManualSetRaceDuration, nil
 	}
 }
 
@@ -353,7 +389,7 @@ func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
 
 	durationInCurrentLap := s.clock.Now().Sub(s.OngoingLap.LapStart)
 
-	bestLap, err := s.getBestLap()
+	bestLap, err := s.getReferenceLap()
 	if err != nil {
 		return -1, fmt.Errorf("impossible to calculate progress adjusted current lap: %v", err)
 	}
@@ -393,14 +429,20 @@ func (s *Stats) setClock(clock clock.Clock) {
 
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 
-	if s.LastData.BestLap == 0 || s.LastData.LastLap == 0 {
-		return -1, fmt.Errorf("BestLap or LastLap is 0, impossible to calculate fuel needed to finish race")
-	}
-
 	// it is best to use the last lap, since this will compensate for missed packages etc.
 	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
 	if err != nil {
 		return -1, fmt.Errorf("error getting fuel consumption last lap: %v", err)
+	}
+
+	referenceLap, err := s.getReferenceLap()
+	if err != nil {
+		return -1, fmt.Errorf("error getting reference lap: %v", err)
+	}
+
+	raceDuration, err := s.getRaceDuration()
+	if err != nil {
+		return -1, fmt.Errorf("error getting race duration: %v", err)
 	}
 
 	durationSinceStart, err := s.GetDurationSinceStart()
@@ -409,9 +451,8 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 	}
 	fuelNeededToFinishRaceInTotal := calculateFuelNeededToFinishRace(
 		durationSinceStart,
-		s.getRaceDuration(),
-		GetDurationFromGT7Time(s.LastData.BestLap),
-		GetDurationFromGT7Time(s.LastData.LastLap),
+		raceDuration,
+		referenceLap,
 		fuelConsumptionLastLap)
 
 	return fuelNeededToFinishRaceInTotal, nil

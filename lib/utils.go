@@ -73,9 +73,10 @@ func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Durati
 // calculateFuelNeededToFinishRace calculates the fuel needed to finish the race.
 //
 // timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration, lastlaptime time.Duration, fuelconsumedlastlap float32 float32
-func calculateFuelNeededToFinishRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration, lastlaptime time.Duration, fuelconsumedlastlap float32) float32 {
-	fuelConsumptionQuota := fuelconsumedlastlap / float32(lastlaptime.Milliseconds())
-	timeLeftInRace := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestlaptime)
+func calculateFuelNeededToFinishRace(timeInRace time.Duration, totalDurationOfRace time.Duration, laptime time.Duration, fuelconsumedlastlap float32) float32 {
+
+	fuelConsumptionQuota := fuelconsumedlastlap / float32(laptime.Milliseconds())
+	timeLeftInRace := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, laptime)
 	return float32(timeLeftInRace.Milliseconds()) * fuelConsumptionQuota
 
 }

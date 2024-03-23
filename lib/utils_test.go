@@ -50,10 +50,10 @@ func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 			20*time.Minute+30*time.Second+10*time.Millisecond,
 			60*time.Minute,
 			1*time.Minute+30*time.Second,
-			1*time.Minute+45*time.Second,
 			2,
 		)
-		assert.Equal(t, float32(46.856953), fuelneededToFinish)
+		// FIME calculate
+		assert.Equal(t, float32(54.666447), fuelneededToFinish)
 	})
 
 	t.Run("calculateFuelNeededToFinishRaceSimple", func(t *testing.T) {
@@ -70,7 +70,6 @@ func Test_calculateFuelNeededToFinishRace(t *testing.T) {
 		fuelneededToFinish := calculateFuelNeededToFinishRace(
 			20*time.Minute,
 			60*time.Minute,
-			1*time.Minute,
 			1*time.Minute,
 			2,
 		)

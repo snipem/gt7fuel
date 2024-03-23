@@ -181,9 +181,9 @@ func TestStats_GetMessage(t *testing.T) {
 			LapsLeftInRace:             -1,
 			EndOfRaceType:              "By Time",
 			FuelConsumptionPerMinute:   "-1.00",
-			ErrorMessage:               "Laps left in race unknown: BestLap is 0, impossible to calculate laps left based on lap time\nFuel needed to finish race unknown: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race\nFuel Div unknown: error getting fuel needed to finish race: BestLap or LastLap is 0, impossible to calculate fuel needed to finish race",
+			ErrorMessage:               "Laps left in race unknown: error getting duration since start: race start time is not detected, cannot get time since start\nFuel needed to finish race unknown: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0\nFuel Div unknown: error getting fuel needed to finish race: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0",
 			NextPitStop:                -1,
-			CurrentLapProgressAdjusted: "-1",
+			CurrentLapProgressAdjusted: "-1.0",
 		}, s.GetMessage())
 	})
 
@@ -219,7 +219,7 @@ func TestStats_GetMessage(t *testing.T) {
 			EndOfRaceType:              "By Time",
 			FuelConsumptionPerMinute:   "16.67",
 			NextPitStop:                5,
-			CurrentLapProgressAdjusted: "5",
+			CurrentLapProgressAdjusted: "5.3",
 			ErrorMessage:               "",
 		}, s.GetMessage())
 	})
@@ -256,7 +256,7 @@ func TestStats_GetMessage(t *testing.T) {
 			EndOfRaceType:              ByLaps,
 			FuelConsumptionPerMinute:   "16.67",
 			NextPitStop:                5,
-			CurrentLapProgressAdjusted: "5",
+			CurrentLapProgressAdjusted: "5.3",
 		}, s.GetMessage())
 	})
 
@@ -297,7 +297,7 @@ func TestStats_GetMessage(t *testing.T) {
 			FuelConsumptionPerMinute:   "0.00",
 			ErrorMessage:               "",
 			NextPitStop:                -1,
-			CurrentLapProgressAdjusted: "0",
+			CurrentLapProgressAdjusted: "0.3",
 		}, s.GetMessage())
 	})
 
