@@ -61,6 +61,8 @@ func stayAwakeIfConnectionActive(s *lib.Stats) {
 			} else {
 				log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
 			}
+		} else {
+			log.Println("Connection is not active")
 		}
 		time.Sleep(10 * time.Second)
 	}
@@ -142,6 +144,7 @@ func run(int) {
 
 	gt7stats = lib.NewStats()
 
+	go lib.ReadStream(gt7stats.LastTireData)
 	go LogRace(gt7c, gt7stats, &raceTimeInMinutes)
 
 	port := ":9100"

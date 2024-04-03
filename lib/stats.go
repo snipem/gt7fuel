@@ -14,6 +14,7 @@ type Stats struct {
 	Laps           []Lap
 	OngoingLap     Lap
 	LastData       *gt7.GTData
+	LastTireData   *TireData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
 	ManualSetRaceDuration time.Duration
@@ -33,6 +34,7 @@ func NewStats() *Stats {
 	s := Stats{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
+	s.LastTireData = &TireData{}
 	s.ConnectionActive = false
 	// set a proper clock
 	s.setClock(clock.New())
@@ -105,10 +107,12 @@ func (s *Stats) GetAverageLapTime() (time.Duration, error) {
 
 const NoStartDetected = "Noch kein Start erfasst"
 
-func (s *Stats) GetMessage() interface{} {
+func (s *Stats) GetMessage() Message {
 
 	timeSinceStart := ""
 	errorMessages := []string{}
+
+	errorMessages = append(errorMessages, fmt.Sprintf("Tire Data: %s", s.LastTireData))
 
 	isValid := s.getValidState()
 
@@ -397,6 +401,21 @@ func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
 
 }
 
+func (s *Stats) GetProgressAdjustedLapsLeftInRace() (float32, error) {
+
+	totalLapsInRace, err := s.getTotalLapsInRace()
+	if err != nil {
+		return 0, fmt.Errorf("%v", err)
+	}
+
+	progressAdjustedCurrentLap, err := s.GetProgressAdjustedCurrentLap()
+	if err != nil {
+		return 0, fmt.Errorf("%v", err)
+	}
+
+	return float32(totalLapsInRace) - progressAdjustedCurrentLap, nil
+}
+
 func getDurationInLap(durationInCurrentLap time.Duration, bestLap time.Duration, currentLap int16) (float32, error) {
 	relativeProgressCurrentLap := float32(durationInCurrentLap) / float32(bestLap)
 
@@ -427,6 +446,8 @@ func (s *Stats) setClock(clock clock.Clock) {
 	s.clock = clock
 }
 
+// GetFuelNeededToFinishRaceInTotal calculates how much fuel is needed to finish the race in total
+// Implicit values needed: fuel consumption last lap, reference lap, race duration, duration since start
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
