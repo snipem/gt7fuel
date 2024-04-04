@@ -5,10 +5,13 @@ import (
 	"github.com/gorilla/websocket"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"github.com/snipem/gt7fuel/lib"
+	"github.com/snipem/gt7fuel/lib/experimental"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strconv"
 	"time"
@@ -144,7 +147,7 @@ func run(int) {
 
 	gt7stats = lib.NewStats()
 
-	go lib.ReadStream(gt7stats.LastTireData)
+	go experimental.ReadTireDataFromStream(gt7stats.LastTireData, "https://www.twitch.tv/snimat", path.Join(os.TempDir(), "gt7fuel"))
 	go LogRace(gt7c, gt7stats, &raceTimeInMinutes)
 
 	port := ":9100"

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmhodges/clock"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
+	"github.com/snipem/gt7fuel/lib/experimental"
 	"math"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ type Stats struct {
 	Laps           []Lap
 	OngoingLap     Lap
 	LastData       *gt7.GTData
-	LastTireData   *TireData
+	LastTireData   *experimental.TireData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
 	ManualSetRaceDuration time.Duration
@@ -34,7 +35,7 @@ func NewStats() *Stats {
 	s := Stats{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
-	s.LastTireData = &TireData{}
+	s.LastTireData = &experimental.TireData{}
 	s.ConnectionActive = false
 	// set a proper clock
 	s.setClock(clock.New())
