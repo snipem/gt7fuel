@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/gorilla/websocket"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
@@ -119,18 +120,24 @@ func setupRoutes() {
 
 func main() {
 
+	parseTwitch := flag.Bool("parse-twitch", false, "Set to true to enable parsing Twitch")
+	raceTime := flag.Int("race-time", 60, "Race time in minutes")
+	twitchUrl := flag.String("twitch-url", "https://www.twitch.tv/snimat", "Twitch URL to parse")
+
+	// Parse command-line flags
+	flag.Parse()
+
 	fmt.Printf("Version: https://github.com/snipem/gt7fuel/commit/%s\n", GitCommit)
 
-	raceTimeInMinutes = 60
 	for {
-		run(raceTimeInMinutes)
+		run(*raceTime, *parseTwitch, *twitchUrl)
 		log.Println("Sleeping 10 seconds ...")
 		time.Sleep(10 * time.Second)
 	}
 
 }
 
-func run(int) {
+func run(raceTime int, parseTwitch bool, twitchResource string) {
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
 	go func() {
@@ -147,7 +154,10 @@ func run(int) {
 
 	gt7stats = lib.NewStats()
 
-	go experimental.ReadTireDataFromStream(gt7stats.LastTireData, "https://www.twitch.tv/snimat", path.Join(os.TempDir(), "gt7fuel"))
+	if parseTwitch {
+		log.Printf("Parsing Twitch for Tire Data")
+		go experimental.ReadTireDataFromStream(gt7stats.LastTireData, twitchResource, path.Join(os.TempDir(), "gt7fuel"))
+	}
 	go LogRace(gt7c, gt7stats, &raceTimeInMinutes)
 
 	port := ":9100"
