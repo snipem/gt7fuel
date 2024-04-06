@@ -26,7 +26,7 @@ func runStream(stream string, outputfolder string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cmd := "streamlink " + stream + " best -O | ffmpeg -i pipe:0 -r 1 " + outputfolder + "/output_%02d.jpg"
+	cmd := "streamlink " + stream + " best -O | ffmpeg -i pipe:0 -r 1 " + outputfolder + "/output_%01d.jpg"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return fmt.Sprintf("Failed to execute command: %s", cmd), fmt.Errorf("error: %v", err)
@@ -56,10 +56,10 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 
 	for {
 		response, err := runStream(streamurl, filename)
-		fmt.Println(response)
-		fmt.Printf("Error while starting stream of %s, %v\n", streamurl, err)
+		log.Println(response)
+		log.Printf("Error while starting stream of %s, %v\n", streamurl, err)
 		time.Sleep(15 * time.Second) // wait 15s before restart
-		fmt.Println("Restarting stream")
+		log.Println("Restarting stream")
 	}
 
 }

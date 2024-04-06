@@ -200,6 +200,7 @@ func (s *Stats) GetMessage() Message {
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
+		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 	}
 	return message
 

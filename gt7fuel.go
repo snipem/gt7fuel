@@ -65,7 +65,7 @@ func stayAwakeIfConnectionActive(s *lib.Stats) {
 				log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
 			}
 		} else {
-			log.Println("Connection is not active")
+			log.Println("GT7 Connection is not active")
 		}
 		time.Sleep(10 * time.Second)
 	}
