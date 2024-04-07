@@ -51,17 +51,17 @@ func getAccountableLaps(laps []Lap) []Lap {
 	return lapsAccountable
 }
 
-// GetLapsLeftInRace calculates the number of laps left in a race based on the current time in the race, total duration of the race, and the best lap time.
-func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) (int16, error) {
+// GetLapsLeftInRaceBasedOnTotalRaceDuration calculates the number of laps left in a race based on the current time in the race, total duration of the race, and the best lap time.
+func GetLapsLeftInRaceBasedOnTotalRaceDuration(timeInRace time.Duration, totalDurationOfRace time.Duration, bestLapTime time.Duration) (int16, error) {
 	// Calculate the time left in the race with an extra lap
-	timeLeftWithExtraLap := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, bestLapTime)
+	timeLeftInRace := getTimeLeftInRace(timeInRace, totalDurationOfRace, bestLapTime)
 
 	if bestLapTime == 0 {
 		return -1, fmt.Errorf("best Lap is 0 impossible to calculate Laps left in Race")
 	}
 
 	// Calculate the number of laps left based on the time left with the best lap time
-	lapsLeft := timeLeftWithExtraLap / bestLapTime
+	lapsLeft := timeLeftInRace / bestLapTime
 
 	// If lapsLeft is negative, return 0, otherwise return lapsLeft as int16
 	if lapsLeft < 0 {
@@ -76,13 +76,12 @@ func GetLapsLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Durati
 func calculateFuelNeededToFinishRace(timeInRace time.Duration, totalDurationOfRace time.Duration, laptime time.Duration, fuelconsumedlastlap float32) float32 {
 
 	fuelConsumptionQuota := fuelconsumedlastlap / float32(laptime.Milliseconds())
-	timeLeftInRace := getTimeLeftInRaceWithExtraLap(timeInRace, totalDurationOfRace, laptime)
+	timeLeftInRace := getTimeLeftInRace(timeInRace, totalDurationOfRace, laptime)
 	return float32(timeLeftInRace.Milliseconds()) * fuelConsumptionQuota
 
 }
 
-func getTimeLeftInRaceWithExtraLap(timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration) time.Duration {
-	totalDurationPlusExtraLap := totalDurationOfRace + bestlaptime
-	timeLeftInRace := totalDurationPlusExtraLap - timeInRace
+func getTimeLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Duration, bestlaptime time.Duration) time.Duration {
+	timeLeftInRace := totalDurationOfRace - timeInRace
 	return timeLeftInRace
 }

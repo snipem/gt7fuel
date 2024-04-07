@@ -250,7 +250,7 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 			return -1, fmt.Errorf("error getting duration since start: %v", err)
 		}
 
-		lapsLeftInRace, err := GetLapsLeftInRace(durationSinceStart, raceDuration, bestLap)
+		lapsLeftInRace, err := GetLapsLeftInRaceBasedOnTotalRaceDuration(durationSinceStart, raceDuration, bestLap)
 		if err != nil {
 			return -1, fmt.Errorf("error getting laps left: %v", err)
 		}
@@ -308,21 +308,23 @@ func (s *Stats) getTotalLapsInRace() (int16, error) {
 
 	// we assume the race hos not started yet to get the total number of laps
 
-	lapsLeftInRace, err := GetLapsLeftInRace(time.Duration(0), raceDuration, bestLap)
+	lapsLeftInRace, err := GetLapsLeftInRaceBasedOnTotalRaceDuration(time.Duration(0), raceDuration, bestLap)
 	if err != nil {
 		return -1, fmt.Errorf("error getting laps left: %v", err)
 	}
 	return lapsLeftInRace, nil
 }
 func (s *Stats) getRaceDuration() (time.Duration, error) {
+	referenceLap, err := s.getReferenceLap()
+	if err != nil {
+		return 0, fmt.Errorf("error getting reference lap: %v", err)
+	}
 	if s.LastData.TotalLaps > 0 {
-		referenceLap, err := s.getReferenceLap()
-		if err != nil {
-			return 0, fmt.Errorf("error getting reference lap: %v", err)
-		}
 		return referenceLap * time.Duration(s.LastData.TotalLaps), nil
 	} else {
-		return s.ManualSetRaceDuration, nil
+		// Add a lap to the manual set race duration because there might be an additional lap
+		// This is the only place we account for this matter
+		return s.ManualSetRaceDuration + referenceLap, nil
 	}
 }
 
