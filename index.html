@@ -197,7 +197,10 @@
         next_pit_stop.textContent = data.next_pit_stop;
         current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
 
-        laps.textContent = data.formatted_laps;
+        var laps_div = document.getElementById('laps')
+        laps_div.innerHTML = "";
+        // FIXME: Use innerhtml directly
+        laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
 
         if (!data.valid_state) {
             document.body.style.background = "#947b00";
