@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"github.com/jmhodges/clock"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -437,4 +438,9 @@ func Test_getNextPitStop(t *testing.T) {
 	assert.Equal(t, 0, getNextPitStop(0, 5, 0.5), "Simple")
 	assert.Equal(t, 25, getNextPitStop(100, 5, 5.5), "Simple")
 	assert.Equal(t, -1, getNextPitStop(100, 0, 5.5), "Simple")
+}
+
+func Test_formatLaps(t *testing.T) {
+	formattedLaps := formatLaps(getReasonableLaps())
+	fmt.Println(formattedLaps)
 }

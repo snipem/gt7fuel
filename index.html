@@ -152,6 +152,10 @@
     <a href="/?min=10">10 min</a>
 </p>
 
+<div id="prerenderedhtml">
+    <div id="laps"></div>
+</div>
+
 <div id="error_message_container">
     <pre id="error_message"></pre>
 </div>
@@ -192,6 +196,8 @@
         fuel_consumption_per_minute.textContent = data.fuel_consumption_per_minute;
         next_pit_stop.textContent = data.next_pit_stop;
         current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
+
+        laps.textContent = data.formatted_laps;
 
         if (!data.valid_state) {
             document.body.style.background = "#947b00";

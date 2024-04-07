@@ -43,6 +43,7 @@ type Lap struct {
 	FuelStart    float32
 	FuelEnd      float32
 	FuelConsumed float32
+	TireConsumed float32
 	Number       int16
 	Duration     time.Duration
 	LapStart     time.Time
@@ -177,6 +178,8 @@ func (s *Stats) GetMessage() interface{} {
 		isValid = false
 	}
 
+	formattedLaps := formatLaps(s.Laps)
+
 	message := Message{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                  s.LastData.PackageID,
@@ -195,9 +198,35 @@ func (s *Stats) GetMessage() interface{} {
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
+		FormattedLaps:              formattedLaps,
 	}
 	return message
 
+}
+
+func formatLaps(laps []Lap) string {
+
+	html := "<table>\n"
+
+	// Header
+	html += "\t<tr>\n" +
+		fmt.Sprintf("\t\t<th>#</th>\n") +
+		fmt.Sprintf("\t\t<th>t</th>\n") +
+		fmt.Sprintf("\t\t<th>F</th>\n") +
+		fmt.Sprintf("\t\t<th>T</th>\n") +
+		"\t</tr>\n"
+
+	for _, lap := range laps {
+
+		html += "\t<tr>\n" +
+			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
+			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.FuelConsumed) +
+			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.TireConsumed) +
+			"\t</tr>\n"
+	}
+	html += "</table>\n"
+	return html
 }
 
 func (s *Stats) getValidState() bool {

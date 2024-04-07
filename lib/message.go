@@ -18,4 +18,5 @@ type Message struct {
 	ErrorMessage               string  `json:"error_message"`
 	NextPitStop                int16   `json:"next_pit_stop"`
 	CurrentLapProgressAdjusted string  `json:"current_lap_progress_adjusted"`
+	FormattedLaps              string  `json:"formatted_laps"`
 }
