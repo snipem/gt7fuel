@@ -5,7 +5,7 @@ install:
 	go build -ldflags "-X main.GitCommit=${GIT_COMMIT} -s -w" -o ${HOME}/bin gt7fuel.go
 
 run:
-	go run gt7fuel.go 60
+	go run gt7fuel.go --race-time=60
 
 test:
 	go test ./lib

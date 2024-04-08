@@ -65,6 +65,7 @@ func resetOngoingLap(ld *gt7.GTData, gt7stats *Stats) {
 func finishLap(ld *gt7.GTData, gt7stats *Stats) {
 	gt7stats.OngoingLap.FuelEnd = ld.CurrentFuel
 	gt7stats.OngoingLap.Duration = GetDurationFromGT7Time(ld.LastLap)
+	gt7stats.OngoingLap.TiresEnd = *gt7stats.LastTireData
 
 	// Do not log last laps fuel consumption in the first lap
 	if ld.CurrentLap != 1 {

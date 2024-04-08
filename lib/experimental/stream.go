@@ -48,6 +48,8 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 			tr.LastWrite = trRead.LastWrite
 			tr.Filename = trRead.Filename
 
+			tr.AvgTireDataFrom = trRead.AvgTireDataFrom
+
 			if err != nil {
 				log.Printf("Error reading file '%s': %v\n", filename, err)
 			}
@@ -65,16 +67,17 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 }
 
 type TireData struct {
-	FrontLeft  int
-	FrontRight int
-	RearLeft   int
-	RearRight  int
-	Filename   string
-	LastWrite  time.Time
+	FrontLeft       int
+	FrontRight      int
+	RearLeft        int
+	RearRight       int
+	Filename        string
+	LastWrite       time.Time
+	AvgTireDataFrom []TireData
 }
 
 func (t *TireData) String() string {
-	return fmt.Sprintf("FrontLeft: %d, FrontRight: %d, RearLeft: %d, RearRight: %d, Filename: %s, Last Write: %s", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight, t.Filename, t.LastWrite)
+	return fmt.Sprintf("FrontLeft: %d, FrontRight: %d, RearLeft: %d, RearRight: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
 }
 
 func ProcessImagesInFolder(folder string) (TireData, error) {
@@ -85,22 +88,55 @@ func ProcessImagesInFolder(folder string) (TireData, error) {
 
 	//sort files by date
 	files = sortFilesByDate(files)
+	maxReadings := 5
+	tdReadings := []TireData{}
+
+	if len(files) < maxReadings {
+		log.Printf("Not enough files in folder %s\n", folder)
+		return TireData{}, nil
+	}
 
 	for _, file := range files {
 		if file.IsDir() {
 			continue
 		}
 		imageFilename := path.Join(folder, file.Name())
-		log.Printf("Processing image %s\n", imageFilename)
+		//log.Printf("Processing image %s\n", imageFilename)
 		td, err := processImage(imageFilename)
-		log.Printf("Got data %v from image %s\n", td, imageFilename)
 		if err != nil {
 			return TireData{}, err
 		}
-		return td, nil
+
+		//log.Printf("Got data %v from image %s\n", td, imageFilename)
+		tdReadings = append(tdReadings, td)
+
+		if len(tdReadings) >= maxReadings {
+			avgReading := avgTdReading(tdReadings)
+			log.Printf("Got %d readings\n: %s", len(tdReadings), avgReading)
+			return avgReading, nil
+		}
+
 	}
 	// FIXME maybe use an average
 	return TireData{}, nil
+}
+
+func avgTdReading(readings []TireData) TireData {
+
+	td := TireData{}
+	for _, r := range readings {
+		td.FrontLeft += r.FrontLeft
+		td.FrontRight += r.FrontRight
+		td.RearLeft += r.RearLeft
+		td.RearRight += r.RearRight
+		td.AvgTireDataFrom = append(td.AvgTireDataFrom, r)
+	}
+	td.FrontLeft /= len(readings)
+	td.FrontRight /= len(readings)
+	td.RearLeft /= len(readings)
+	td.RearRight /= len(readings)
+
+	return td
 }
 
 func sortFilesByDate(files []os.DirEntry) []os.DirEntry {

@@ -50,6 +50,7 @@ type Lap struct {
 	Number       int16
 	Duration     time.Duration
 	LapStart     time.Time
+	TiresEnd     experimental.TireData
 }
 
 func (l Lap) String() string {
@@ -217,18 +218,20 @@ func formatLaps(laps []Lap) string {
 	// Header
 	html += "\t<tr>\n" +
 		fmt.Sprintf("\t\t<th>#</th>\n") +
-		fmt.Sprintf("\t\t<th>t</th>\n") +
-		fmt.Sprintf("\t\t<th>F</th>\n") +
+		fmt.Sprintf("\t\t<th>Time</th>\n") +
+		fmt.Sprintf("\t\t<th>Fuel</th>\n") +
 		fmt.Sprintf("\t\t<th>T</th>\n") +
 		"\t</tr>\n"
 
-	for _, lap := range laps {
+	for i := len(laps) - 1; i >= 0; i-- {
+
+		lap := laps[i]
 
 		html += "\t<tr>\n" +
 			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
-			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.FuelConsumed) +
-			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.TireConsumed) +
+			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.FuelConsumed) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.String()) +
 			"\t</tr>\n"
 	}
 	html += "</table>\n"
