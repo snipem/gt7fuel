@@ -113,6 +113,7 @@ func Test_logTick(t *testing.T) {
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 1) // Should have lap now, the last and the ongoing
+	assert.Nil(t, s.Laps[len(s.Laps)-1].PreviousLap)
 
 	// Start Lap 3
 	ld.CurrentFuel = 93
@@ -121,6 +122,7 @@ func Test_logTick(t *testing.T) {
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 2) // Should have lap now, the last and the ongoing
+	assert.NotNil(t, s.Laps[len(s.Laps)-1].PreviousLap)
 
 	// No should have only 2 laps, because lap 3 is not completed yet
 
