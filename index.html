@@ -19,6 +19,18 @@
         font-size: 2em;
     }
 
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        <!-- font-family: Arial, sans-serif; -->
+        font-size: 14px;
+    }
+    th, td {
+        border: 1px solid white;
+        padding: 8px;
+        text-align: left;
+    }
+
     body {
         font-family: Arial, serif;
         background-color: #222;
@@ -105,6 +117,14 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="column titles">
+    </div>
+    <div class="column" id="tires"></div>
+    <div class="column titles">
+    </div>
+</div>
+
 <div class="stats_container">
     <div class="stats_column">
         <b>Nachzutankender Sprit zum Abschluss des Rennens</b>
@@ -146,10 +166,10 @@
 </div>
 
 <p>
-    <a href="/?min=120">120 min</a>
-    <a href="/?min=60">60 min</a>
-    <a href="/?min=20">20 min</a>
-    <a href="/?min=10">10 min</a>
+    <a href="/static?min=120">120 min</a>
+    <a href="/static?min=60">60 min</a>
+    <a href="/static?min=20">20 min</a>
+    <a href="/static?min=10">10 min</a>
 </p>
 
 <div id="prerenderedhtml">
@@ -196,6 +216,7 @@
         fuel_consumption_per_minute.textContent = data.fuel_consumption_per_minute;
         next_pit_stop.textContent = data.next_pit_stop;
         current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
+        tires.textContent = data.tires;
 
         var laps_div = document.getElementById('laps')
         laps_div.innerHTML = "";

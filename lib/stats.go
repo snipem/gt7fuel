@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmhodges/clock"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
+	"github.com/snipem/gt7fuel/lib/experimental"
 	"math"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ type Stats struct {
 	Laps           []Lap
 	OngoingLap     Lap
 	LastData       *gt7.GTData
+	LastTireData   *experimental.TireData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
 	ManualSetRaceDuration time.Duration
@@ -33,6 +35,7 @@ func NewStats() *Stats {
 	s := Stats{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
+	s.LastTireData = &experimental.TireData{}
 	s.ConnectionActive = false
 	// set a proper clock
 	s.setClock(clock.New())
@@ -48,6 +51,7 @@ type Lap struct {
 	Duration     time.Duration
 	LapStart     time.Time
 	PreviousLap  *Lap
+	TiresEnd     experimental.TireData
 }
 
 func (l Lap) String() string {
@@ -118,10 +122,12 @@ func (s *Stats) GetAverageLapTime() (time.Duration, error) {
 
 const NoStartDetected = "Noch kein Start erfasst"
 
-func (s *Stats) GetMessage() interface{} {
+func (s *Stats) GetMessage() Message {
 
 	timeSinceStart := ""
 	errorMessages := []string{}
+
+	errorMessages = append(errorMessages, fmt.Sprintf("Tire Data: %s", s.LastTireData))
 
 	isValid := s.getValidState()
 
@@ -211,6 +217,7 @@ func (s *Stats) GetMessage() interface{} {
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
 		FormattedLaps:              formattedLaps,
+		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 	}
 	return message
 
@@ -223,18 +230,20 @@ func formatLaps(laps []Lap) string {
 	// Header
 	html += "\t<tr>\n" +
 		fmt.Sprintf("\t\t<th>#</th>\n") +
-		fmt.Sprintf("\t\t<th>t</th>\n") +
-		fmt.Sprintf("\t\t<th>F</th>\n") +
+		fmt.Sprintf("\t\t<th>Time</th>\n") +
+		fmt.Sprintf("\t\t<th>Fuel</th>\n") +
 		fmt.Sprintf("\t\t<th>T</th>\n") +
 		"\t</tr>\n"
 
-	for _, lap := range laps {
+	for i := len(laps) - 1; i >= 0; i-- {
+
+		lap := laps[i]
 
 		html += "\t<tr>\n" +
 			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
-			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.FuelConsumed) +
-			fmt.Sprintf("\t\t<td>%.1f</td>\n", lap.TireConsumed) +
+			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.FuelConsumed) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.String()) +
 			"\t</tr>\n"
 	}
 	html += "</table>\n"
@@ -440,6 +449,21 @@ func (s *Stats) GetProgressAdjustedCurrentLap() (float32, error) {
 
 }
 
+func (s *Stats) GetProgressAdjustedLapsLeftInRace() (float32, error) {
+
+	totalLapsInRace, err := s.getTotalLapsInRace()
+	if err != nil {
+		return 0, fmt.Errorf("%v", err)
+	}
+
+	progressAdjustedCurrentLap, err := s.GetProgressAdjustedCurrentLap()
+	if err != nil {
+		return 0, fmt.Errorf("%v", err)
+	}
+
+	return float32(totalLapsInRace) - progressAdjustedCurrentLap, nil
+}
+
 func getDurationInLap(durationInCurrentLap time.Duration, bestLap time.Duration, currentLap int16) (float32, error) {
 	relativeProgressCurrentLap := float32(durationInCurrentLap) / float32(bestLap)
 
@@ -470,6 +494,8 @@ func (s *Stats) setClock(clock clock.Clock) {
 	s.clock = clock
 }
 
+// GetFuelNeededToFinishRaceInTotal calculates how much fuel is needed to finish the race in total
+// Implicit values needed: fuel consumption last lap, reference lap, race duration, duration since start
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.

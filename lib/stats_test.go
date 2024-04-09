@@ -444,6 +444,46 @@ func Test_getNextPitStop(t *testing.T) {
 	assert.Equal(t, -1, getNextPitStop(100, 0, 5.5), "Simple")
 }
 
+func TestStats_GetFuelNeededToFinishRaceInTotal(t *testing.T) {
+	t.Run("Total Laps", func(t *testing.T) {
+		s := NewStats()
+		fakeClock := clock.NewFake()
+		nowTime := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+		startTime := nowTime.Add(-2 * time.Minute)
+		fakeClock.Set(nowTime)
+		s.clock = fakeClock
+
+		s.LastData.TotalLaps = 10
+		s.LastData.CurrentLap = 2
+		s.LastData.BestLap = 2 * 60 * 1000 // 2 minutes
+		s.raceStartTime = startTime
+
+		s.OngoingLap = getReasonableOngoingLap()
+		s.Laps = getReasonableLaps()
+
+		avgFuel, err := s.GetAverageFuelConsumptionPerLap()
+		assert.NoError(t, err)
+		assert.Equal(t, float32(25), avgFuel)
+
+		fuelNeeded, err := s.GetFuelNeededToFinishRaceInTotal()
+		assert.NoError(t, err)
+		assert.Equal(t, float32(250), fuelNeeded)
+
+		fuelDiv, err := s.GetFuelDiv()
+		assert.NoError(t, err)
+		assert.Equal(t, float32(250), fuelDiv)
+
+		lapsLeftInRace, err := s.getLapsLeftInRace()
+		assert.NoError(t, err)
+		assert.Equal(t, int16(9), lapsLeftInRace)
+
+		progressAdjustedLapsLeftInRace, err := s.GetProgressAdjustedLapsLeftInRace()
+		assert.NoError(t, err)
+		assert.Equal(t, float32(7.25), progressAdjustedLapsLeftInRace)
+
+	})
+}
+
 func Test_formatLaps(t *testing.T) {
 	formattedLaps := formatLaps(getReasonableLaps())
 	fmt.Println(formattedLaps)

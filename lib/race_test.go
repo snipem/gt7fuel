@@ -29,10 +29,10 @@ func Test_logTick(t *testing.T) {
 		TypeSpeedRL:       0,
 		TyreSpeedRR:       0,
 		CarSpeed:          0,
-		TyreSlipRatioFL:   "",
-		TyreSlipRatioFR:   "",
-		TyreSlipRatioRL:   "",
-		TyreSlipRatioRR:   "",
+		TyreSlipRatioFL:   0,
+		TyreSlipRatioFR:   0,
+		TyreSlipRatioRL:   0,
+		TyreSlipRatioRR:   0,
 		TimeOnTrack:       gt7.Duration{},
 		TotalLaps:         0,
 		CurrentPosition:   0,
@@ -86,6 +86,7 @@ func Test_logTick(t *testing.T) {
 	// First tick, pre race
 	ld.CurrentFuel = 100
 	ld.LastLap = 0
+	ld.BestLap = -1
 	ld.PackageID += 1
 
 	_ = LogTick(ld, s, &raceTimeInMinutes)
@@ -94,6 +95,7 @@ func Test_logTick(t *testing.T) {
 	// Do another log tick, laps should still be 0
 	ld.CurrentFuel = 99
 	ld.LastLap = 0
+	ld.BestLap = -1
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
 	assert.Len(t, s.Laps, 0)
@@ -101,6 +103,7 @@ func Test_logTick(t *testing.T) {
 	// Race Start Start Lap 1
 	ld.CurrentFuel = 98
 	ld.LastLap = 0
+	ld.BestLap = -1
 	ld.CurrentLap = 1 // RACE START FROM NOW ON!
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
@@ -109,6 +112,7 @@ func Test_logTick(t *testing.T) {
 	// Start Lap 2
 	ld.CurrentFuel = 95
 	ld.CurrentLap = 2
+	ld.BestLap = -1 // Best Lap is not set yet
 	ld.LastLap = 3 * 60 * 1000
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
@@ -118,6 +122,7 @@ func Test_logTick(t *testing.T) {
 	// Start Lap 3
 	ld.CurrentFuel = 93
 	ld.CurrentLap = 3
+	ld.BestLap = 2 * 60 * 1000 // Best Lap is now set
 	ld.LastLap = 2 * 60 * 1000
 	ld.PackageID += 1
 	_ = LogTick(ld, s, &raceTimeInMinutes)
