@@ -311,7 +311,7 @@ func getReasonableLaps() []Lap {
 
 	startOfOngoingLap := getReasonableOngoingLap().LapStart
 
-	return []Lap{
+	laps := []Lap{
 		{
 			FuelStart:    100,
 			FuelEnd:      50,
@@ -329,6 +329,10 @@ func getReasonableLaps() []Lap {
 			LapStart:     startOfOngoingLap.Add(-(durationSecondLap)),
 		},
 	}
+
+	laps[1].PreviousLap = &laps[0]
+
+	return laps
 }
 
 func getReasonableOngoingLap() Lap {
@@ -443,4 +447,22 @@ func Test_getNextPitStop(t *testing.T) {
 func Test_formatLaps(t *testing.T) {
 	formattedLaps := formatLaps(getReasonableLaps())
 	fmt.Println(formattedLaps)
+}
+
+func TestLap_GetTotalRaceDurationAtEndOfLap(t *testing.T) {
+	t.Run("Real Laps", func(t *testing.T) {
+		laps := getReasonableLaps()
+		assert.Equal(t, laps[0].Duration+laps[1].Duration, laps[1].GetTotalRaceDurationAtEndOfLap())
+	})
+	t.Run("One Lap", func(t *testing.T) {
+		lap := Lap{
+			PreviousLap: nil,
+		}
+		assert.Equal(t, time.Duration(0), lap.GetTotalRaceDurationAtEndOfLap())
+	})
+}
+
+func TestLap_GetTotalRaceDurationAtStartOfLap(t *testing.T) {
+	laps := getReasonableLaps()
+	assert.Equal(t, laps[0].Duration, laps[1].GetTotalRaceDurationAtStartOfLap())
 }

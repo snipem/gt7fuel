@@ -47,11 +47,23 @@ type Lap struct {
 	Number       int16
 	Duration     time.Duration
 	LapStart     time.Time
+	PreviousLap  *Lap
 }
 
 func (l Lap) String() string {
 	return fmt.Sprintf("Lap %d: FuelStart=%.2f, FuelEnd=%.2f, FuelConsumed=%.2f, Duration=%s",
 		l.Number, l.FuelStart, l.FuelEnd, l.FuelConsumed, l.Duration)
+}
+
+func (l *Lap) GetTotalRaceDurationAtStartOfLap() time.Duration {
+	return l.GetTotalRaceDurationAtEndOfLap() - l.Duration
+}
+func (l *Lap) GetTotalRaceDurationAtEndOfLap() time.Duration {
+	if l.PreviousLap != nil {
+		return l.Duration + l.PreviousLap.GetTotalRaceDurationAtEndOfLap()
+	} else {
+		return l.Duration
+	}
 }
 
 func (s *Stats) Reset() {

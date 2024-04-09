@@ -74,6 +74,8 @@ func finishLap(ld *gt7.GTData, gt7stats *Stats) {
 
 	log.Printf("Add new Lap. Last Lap was: %s\n", gt7stats.OngoingLap)
 
+	oldOngoingLap := gt7stats.OngoingLap
 	gt7stats.Laps = append(gt7stats.Laps, gt7stats.OngoingLap)
 	resetOngoingLap(ld, gt7stats)
+	gt7stats.OngoingLap.PreviousLap = &oldOngoingLap
 }
