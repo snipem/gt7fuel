@@ -80,6 +80,22 @@ func (t *TireData) String() string {
 	return fmt.Sprintf("FrontLeft: %d, FrontRight: %d, RearLeft: %d, RearRight: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
 }
 
+func (t *TireData) Html() string {
+	return fmt.Sprintf(
+		"<table>"+
+			"<tr>"+
+			"<td>%d<td>"+
+			"<td>%d<td>"+
+			"</tr>"+
+			"<tr>"+
+			"<td>%d<td>"+
+			"<td>%d<td>"+
+			"</tr>"+
+			"</table>"+
+			"", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight,
+	)
+}
+
 func ProcessImagesInFolder(folder string) (TireData, error) {
 	files, err := os.ReadDir(folder)
 	if err != nil {

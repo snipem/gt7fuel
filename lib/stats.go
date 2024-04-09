@@ -228,10 +228,10 @@ func getHtmlTableForLaps(laps []Lap) string {
 	// Header
 	html += "\t<tr>\n" +
 		fmt.Sprintf("\t\t<th>#</th>\n") +
+		fmt.Sprintf("\t\t<th>Duration</th>\n") +
 		fmt.Sprintf("\t\t<th>Time</th>\n") +
 		fmt.Sprintf("\t\t<th>Fuel</th>\n") +
 		fmt.Sprintf("\t\t<th>Tires</th>\n") +
-		fmt.Sprintf("\t\t<th>Duration at End</th>\n") +
 		"\t</tr>\n"
 
 	for i := len(laps) - 1; i >= 0; i-- {
@@ -240,10 +240,10 @@ func getHtmlTableForLaps(laps []Lap) string {
 
 		html += "\t<tr>\n" +
 			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap())) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
 			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.FuelConsumed) +
-			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.String()) +
-			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap())) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.Html()) +
 			"\t</tr>\n"
 	}
 	html += "</table>\n"
