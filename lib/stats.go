@@ -127,8 +127,6 @@ func (s *Stats) GetMessage() Message {
 	timeSinceStart := ""
 	errorMessages := []string{}
 
-	errorMessages = append(errorMessages, fmt.Sprintf("Tire Data: %s", s.LastTireData))
-
 	isValid := s.getValidState()
 
 	durationSinceStart, err := s.GetDurationSinceStart()
@@ -196,7 +194,7 @@ func (s *Stats) GetMessage() Message {
 		isValid = false
 	}
 
-	formattedLaps := formatLaps(s.Laps)
+	formattedLaps := getHtmlTableForLaps(s.Laps)
 
 	message := Message{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
@@ -223,7 +221,7 @@ func (s *Stats) GetMessage() Message {
 
 }
 
-func formatLaps(laps []Lap) string {
+func getHtmlTableForLaps(laps []Lap) string {
 
 	html := "<table>\n"
 
@@ -232,7 +230,8 @@ func formatLaps(laps []Lap) string {
 		fmt.Sprintf("\t\t<th>#</th>\n") +
 		fmt.Sprintf("\t\t<th>Time</th>\n") +
 		fmt.Sprintf("\t\t<th>Fuel</th>\n") +
-		fmt.Sprintf("\t\t<th>T</th>\n") +
+		fmt.Sprintf("\t\t<th>Tires</th>\n") +
+		fmt.Sprintf("\t\t<th>Duration at End</th>\n") +
 		"\t</tr>\n"
 
 	for i := len(laps) - 1; i >= 0; i-- {
@@ -244,6 +243,7 @@ func formatLaps(laps []Lap) string {
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
 			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.FuelConsumed) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.String()) +
+			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap())) +
 			"\t</tr>\n"
 	}
 	html += "</table>\n"

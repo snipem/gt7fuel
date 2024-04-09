@@ -185,6 +185,8 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "Laps left in race unknown: error getting duration since start: race start time is not detected, cannot get time since start\nFuel needed to finish race unknown: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0\nFuel Div unknown: error getting fuel needed to finish race: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "-1.0",
+			FormattedLaps:              getHtmlTableForLaps(s.Laps),
+			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetMessage())
 	})
 
@@ -222,6 +224,8 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
 			ErrorMessage:               "",
+			FormattedLaps:              getHtmlTableForLaps(s.Laps),
+			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetMessage())
 	})
 
@@ -258,6 +262,8 @@ func TestStats_GetMessage(t *testing.T) {
 			FuelConsumptionPerMinute:   "16.67",
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
+			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 		}, s.GetMessage())
 	})
 
@@ -299,6 +305,8 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "0.3",
+			FormattedLaps:              getHtmlTableForLaps(s.Laps),
+			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetMessage())
 	})
 
@@ -467,11 +475,11 @@ func TestStats_GetFuelNeededToFinishRaceInTotal(t *testing.T) {
 
 		fuelNeeded, err := s.GetFuelNeededToFinishRaceInTotal()
 		assert.NoError(t, err)
-		assert.Equal(t, float32(250), fuelNeeded)
+		assert.Equal(t, float32(225), fuelNeeded)
 
 		fuelDiv, err := s.GetFuelDiv()
 		assert.NoError(t, err)
-		assert.Equal(t, float32(250), fuelDiv)
+		assert.Equal(t, float32(225), fuelDiv)
 
 		lapsLeftInRace, err := s.getLapsLeftInRace()
 		assert.NoError(t, err)
@@ -479,13 +487,13 @@ func TestStats_GetFuelNeededToFinishRaceInTotal(t *testing.T) {
 
 		progressAdjustedLapsLeftInRace, err := s.GetProgressAdjustedLapsLeftInRace()
 		assert.NoError(t, err)
-		assert.Equal(t, float32(7.25), progressAdjustedLapsLeftInRace)
+		assert.Equal(t, float32(7.01), progressAdjustedLapsLeftInRace)
 
 	})
 }
 
 func Test_formatLaps(t *testing.T) {
-	formattedLaps := formatLaps(getReasonableLaps())
+	formattedLaps := getHtmlTableForLaps(getReasonableLaps())
 	fmt.Println(formattedLaps)
 }
 
