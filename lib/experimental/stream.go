@@ -66,6 +66,17 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 
 }
 
+type TireDelta struct {
+	FrontLeft  int
+	FrontRight int
+	RearLeft   int
+	RearRight  int
+}
+
+func (t *TireDelta) String() string {
+	return fmt.Sprintf("FL: %d, FR: %d, RR: %d, RR: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
+}
+
 type TireData struct {
 	FrontLeft       int
 	FrontRight      int
@@ -80,6 +91,7 @@ func (t *TireData) String() string {
 	return fmt.Sprintf("FrontLeft: %d, FrontRight: %d, RearLeft: %d, RearRight: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
 }
 
+// Html gives a html table for the tires relative to their position
 func (t *TireData) Html() string {
 	return fmt.Sprintf(
 		"<table>"+
