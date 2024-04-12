@@ -24,11 +24,23 @@ type Stats struct {
 	ConnectionActive      bool
 }
 
-func (s *Stats) getFuelConsumptionLastLap() (float32, error) {
-	if len(s.Laps) < 1 {
-		return -1, fmt.Errorf("not enough laps to return fuel consumption of last lap, nr of laps: %d", len(s.Laps))
+func (s *Stats) GetFuelConsumptionLastLap() (float32, error) {
+	return getFuelConsumptionLastLap(s.Laps)
+}
+
+func getFuelConsumptionLastLap(laps []Lap) (float32, error) {
+	if len(laps) < 1 {
+		return -1, fmt.Errorf("not enough laps to return fuel consumption of last lap, nr of laps: %d", len(laps))
 	}
-	return s.Laps[len(s.Laps)-1].FuelConsumed, nil
+
+	lastLap := laps[len(laps)-1]
+	// if last lap was a pit lap, take the lap before
+	if lastLap.GetFuelConsumed() < 0 {
+		return lastLap.PreviousLap.GetFuelConsumed(), nil
+	}
+
+	return lastLap.GetFuelConsumed(), nil
+
 }
 
 func NewStats() *Stats {
@@ -45,7 +57,6 @@ func NewStats() *Stats {
 type Lap struct {
 	FuelStart    float32
 	FuelEnd      float32
-	FuelConsumed float32
 	TireConsumed float32
 	Number       int16
 	Duration     time.Duration
@@ -56,7 +67,7 @@ type Lap struct {
 
 func (l Lap) String() string {
 	return fmt.Sprintf("Lap %d: FuelStart=%.2f, FuelEnd=%.2f, FuelConsumed=%.2f, Duration=%s",
-		l.Number, l.FuelStart, l.FuelEnd, l.FuelConsumed, l.Duration)
+		l.Number, l.FuelStart, l.FuelEnd, l.GetFuelConsumed(), l.Duration)
 }
 
 func (l *Lap) GetTotalRaceDurationAtStartOfLap() time.Duration {
@@ -68,6 +79,10 @@ func (l *Lap) GetTotalRaceDurationAtEndOfLap() time.Duration {
 	} else {
 		return l.Duration
 	}
+}
+
+func (l Lap) GetFuelConsumed() float32 {
+	return l.FuelStart - l.FuelEnd
 }
 
 func (s *Stats) Reset() {
@@ -159,7 +174,7 @@ func (s *Stats) GetMessage() Message {
 
 	errorMessage := strings.Join(errorMessages, "\n")
 
-	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
+	fuelConsumptionLastLap, err := s.GetFuelConsumptionLastLap()
 	if err != nil {
 		errorMessages = append(errorMessages, fmt.Sprintf("Fuel Consumption last lap unknown: %v", err))
 		isValid = false
@@ -242,7 +257,7 @@ func getHtmlTableForLaps(laps []Lap) string {
 			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap())) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
-			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.FuelConsumed) +
+			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.GetFuelConsumed()) +
 			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.Html()) +
 			"\t</tr>\n"
 	}
@@ -499,7 +514,7 @@ func (s *Stats) setClock(clock clock.Clock) {
 func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 
 	// it is best to use the last lap, since this will compensate for missed packages etc.
-	fuelConsumptionLastLap, err := s.getFuelConsumptionLastLap()
+	fuelConsumptionLastLap, err := s.GetFuelConsumptionLastLap()
 	if err != nil {
 		return -1, fmt.Errorf("error getting fuel consumption last lap: %v", err)
 	}

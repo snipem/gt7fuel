@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"github.com/jmhodges/clock"
+	"github.com/snipem/gt7fuel/lib/experimental"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -12,10 +13,10 @@ func Test_getAverageFuelConsumption(t *testing.T) {
 
 	gt7stats := NewStats()
 	gt7stats.Laps = []Lap{
-		{FuelConsumed: -20, Number: 0},
-		{FuelConsumed: 20, Number: 1},
-		{FuelConsumed: 40, Number: 2},
-		{FuelConsumed: -200, Number: 3},
+		{FuelStart: 0, FuelEnd: 20, Number: 0},
+		{FuelStart: 40, FuelEnd: 20, Number: 1},
+		{FuelStart: 60, FuelEnd: 20, Number: 2},
+		{FuelStart: 60, FuelEnd: 260, Number: 3},
 	}
 	avg, err := gt7stats.GetAverageFuelConsumptionPerLap()
 	assert.NoError(t, err)
@@ -27,10 +28,10 @@ func Test_getAverageFuelConsumptionPerMinute(t *testing.T) {
 
 	gt7stats := NewStats()
 	gt7stats.Laps = []Lap{
-		{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-		{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
-		{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+		{FuelStart: 0, FuelEnd: 20, Number: 0, Duration: 80 * time.Second},
+		{FuelStart: 40, FuelEnd: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
+		{FuelStart: 60, FuelEnd: 20, Number: 2, Duration: 90 * time.Second}, // valid for calculation
+		{FuelStart: 60, FuelEnd: 260, Number: 3, Duration: 70 * time.Second},
 	}
 	assert.Len(t, getAccountableLaps(gt7stats.Laps), 2)
 	avg, _ := gt7stats.GetFuelConsumptionPerMinute()
@@ -45,10 +46,10 @@ func TestStats_GetAverageLapTime(t *testing.T) {
 
 		gt7stats := NewStats()
 		gt7stats.Laps = []Lap{
-			{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-			{FuelConsumed: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
-			{FuelConsumed: 40, Number: 2, Duration: 90 * time.Second}, // valid for calculation
-			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+			{FuelStart: 0, FuelEnd: 20, Number: 0, Duration: 80 * time.Second},
+			{FuelStart: 40, FuelEnd: 20, Number: 1, Duration: 90 * time.Second}, // valid for calculation
+			{FuelStart: 60, FuelEnd: 20, Number: 2, Duration: 90 * time.Second}, // valid for calculation
+			{FuelStart: 60, FuelEnd: 260, Number: 3, Duration: 70 * time.Second},
 		}
 		averageLapTime, err := gt7stats.GetAverageLapTime()
 		assert.NoError(t, err)
@@ -59,10 +60,10 @@ func TestStats_GetAverageLapTime(t *testing.T) {
 
 		gt7stats := NewStats()
 		gt7stats.Laps = []Lap{
-			{FuelConsumed: -20, Number: 0, Duration: 80 * time.Second},
-			{FuelConsumed: -20, Number: 1, Duration: 90 * time.Second},
-			{FuelConsumed: -40, Number: 2, Duration: 90 * time.Second},
-			{FuelConsumed: -200, Number: 3, Duration: 70 * time.Second},
+			{FuelStart: 0, FuelEnd: 20, Number: 0, Duration: 80 * time.Second},
+			{FuelStart: 40, FuelEnd: 60, Number: 1, Duration: 90 * time.Second},
+			{FuelStart: 60, FuelEnd: 80, Number: 2, Duration: 90 * time.Second},
+			{FuelStart: 60, FuelEnd: 260, Number: 3, Duration: 70 * time.Second},
 		}
 		averageLapTime, err := gt7stats.GetAverageLapTime()
 		assert.Error(t, err)
@@ -129,18 +130,16 @@ func TestStats_getValidState(t *testing.T) {
 		s := NewStats()
 		s.Laps = []Lap{
 			{
-				FuelStart:    100,
-				FuelEnd:      80,
-				FuelConsumed: 20,
-				Number:       0,
-				Duration:     0,
+				FuelStart: 100,
+				FuelEnd:   80,
+				Number:    0,
+				Duration:  0,
 			},
 			{
-				FuelStart:    80,
-				FuelEnd:      60,
-				FuelConsumed: 20,
-				Number:       0,
-				Duration:     0,
+				FuelStart: 80,
+				FuelEnd:   60,
+				Number:    0,
+				Duration:  0,
 			},
 		}
 		s.raceStartTime = time.Now().Add(time.Duration(-10) * time.Minute)
@@ -281,10 +280,10 @@ func TestStats_GetMessage(t *testing.T) {
 		s.SetRaceStartTime(fakeClock.Now().Add(time.Duration(-10)*time.Minute + time.Duration(-500)*time.Millisecond))
 
 		s.Laps = []Lap{
-			{FuelStart: 100, FuelEnd: 100, FuelConsumed: 0, Number: 0, Duration: time.Minute * 1},
-			{FuelStart: 100, FuelEnd: 100, FuelConsumed: 0, Number: 1, Duration: time.Minute * 1},
-			{FuelStart: 100, FuelEnd: 100, FuelConsumed: 0, Number: 2, Duration: time.Minute * 1},
-			{FuelStart: 100, FuelEnd: 100, FuelConsumed: 0, Number: 3, Duration: time.Minute * 1},
+			{FuelStart: 100, FuelEnd: 100, Number: 0, Duration: time.Minute * 1},
+			{FuelStart: 100, FuelEnd: 100, Number: 1, Duration: time.Minute * 1},
+			{FuelStart: 100, FuelEnd: 100, Number: 2, Duration: time.Minute * 1},
+			{FuelStart: 100, FuelEnd: 100, Number: 3, Duration: time.Minute * 1},
 		}
 		s.OngoingLap = getReasonableOngoingLap()
 
@@ -321,20 +320,18 @@ func getReasonableLaps() []Lap {
 
 	laps := []Lap{
 		{
-			FuelStart:    100,
-			FuelEnd:      50,
-			FuelConsumed: 50,
-			Number:       0,
-			Duration:     durationFirstLap,
-			LapStart:     startOfOngoingLap.Add(-(durationFirstLap + durationSecondLap)),
+			FuelStart: 100,
+			FuelEnd:   50,
+			Number:    0,
+			Duration:  durationFirstLap,
+			LapStart:  startOfOngoingLap.Add(-(durationFirstLap + durationSecondLap)),
 		},
 		{
-			FuelStart:    50,
-			FuelEnd:      25,
-			FuelConsumed: 25,
-			Number:       1,
-			Duration:     durationSecondLap,
-			LapStart:     startOfOngoingLap.Add(-(durationSecondLap)),
+			FuelStart: 50,
+			FuelEnd:   25,
+			Number:    1,
+			Duration:  durationSecondLap,
+			LapStart:  startOfOngoingLap.Add(-(durationSecondLap)),
 		},
 	}
 
@@ -513,4 +510,37 @@ func TestLap_GetTotalRaceDurationAtEndOfLap(t *testing.T) {
 func TestLap_GetTotalRaceDurationAtStartOfLap(t *testing.T) {
 	laps := getReasonableLaps()
 	assert.Equal(t, laps[0].Duration, laps[1].GetTotalRaceDurationAtStartOfLap())
+}
+
+func TestStats_getFuelConsumptionLastLap(t *testing.T) {
+
+}
+
+func Test_getFuelConsumptionLastLap(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		fuelconsumptionlastlap, err := getFuelConsumptionLastLap([]Lap{
+			{FuelStart: 100, FuelEnd: 99, TireConsumed: 0, Number: int16(0), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+			{FuelStart: 75, FuelEnd: 25, TireConsumed: 0, Number: int16(1), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+			{FuelStart: 25, FuelEnd: 1, TireConsumed: 0, Number: int16(2), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, float32(24), fuelconsumptionlastlap)
+
+	})
+
+	t.Run("Last lap was pitstop", func(t *testing.T) {
+		laps := []Lap{
+			{FuelStart: 100, FuelEnd: 99, TireConsumed: 0, Number: int16(0), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+			{FuelStart: 75, FuelEnd: 25, TireConsumed: 0, Number: int16(1), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+			{FuelStart: 25, FuelEnd: 100, TireConsumed: 0, Number: int16(2), Duration: 1 * time.Minute, LapStart: time.Now(), PreviousLap: nil, TiresEnd: experimental.TireData{}},
+		}
+		laps[2].PreviousLap = &laps[1]
+		laps[1].PreviousLap = &laps[0]
+
+		fuelconsumptionlastlap, err := getFuelConsumptionLastLap(laps)
+		assert.NoError(t, err)
+		// fuelconsumptionlastlap of lap before pit stop
+		assert.Equal(t, float32(50), fuelconsumptionlastlap)
+
+	})
 }

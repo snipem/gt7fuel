@@ -36,7 +36,7 @@ func GetAccountableFuelConsumption(laps []Lap) []float32 {
 	var fuelConsumptionAccountable []float32
 
 	for _, lap := range getAccountableLaps(laps) {
-		fuelConsumptionAccountable = append(fuelConsumptionAccountable, lap.FuelConsumed)
+		fuelConsumptionAccountable = append(fuelConsumptionAccountable, lap.GetFuelConsumed())
 	}
 	return fuelConsumptionAccountable
 }
@@ -44,7 +44,7 @@ func GetAccountableFuelConsumption(laps []Lap) []float32 {
 func getAccountableLaps(laps []Lap) []Lap {
 	var lapsAccountable []Lap
 	for _, lap := range laps {
-		if lap.FuelConsumed >= 0 && lap.Number > 0 {
+		if lap.GetFuelConsumed() >= 0 && lap.Number > 0 {
 			lapsAccountable = append(lapsAccountable, lap)
 		}
 	}

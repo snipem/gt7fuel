@@ -125,20 +125,20 @@ func Test_getLapsLeftInRace(t *testing.T) {
 
 func Test_getAccountableLaps(t *testing.T) {
 	accountableLaps := getAccountableLaps([]Lap{
-		{Number: 0, FuelConsumed: 5, Duration: 0},
-		{Number: 1, FuelConsumed: 5, Duration: 0},
-		{Number: 2, FuelConsumed: 5, Duration: 0},
-		{Number: 3, FuelConsumed: 5, Duration: 0},
-		{Number: 4, FuelConsumed: 5, Duration: 0},
-		{Number: 5, FuelConsumed: 5, Duration: 0},
-		{Number: 6, FuelConsumed: -5, Duration: 0},
-		{Number: 7, FuelConsumed: 5, Duration: 0},
-		{Number: 8, FuelConsumed: 5, Duration: 0},
-		{Number: 9, FuelConsumed: 5, Duration: 0},
+		{Number: 0, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 1, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 2, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 3, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 4, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 5, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 6, FuelStart: 5, FuelEnd: 10, Duration: 0},
+		{Number: 7, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 8, FuelStart: 10, FuelEnd: 5, Duration: 0},
+		{Number: 9, FuelStart: 10, FuelEnd: 5, Duration: 0},
 	})
 	assert.Len(t, accountableLaps, 8) // first and sixth lap is not accountable
 
-	assert.NotContains(t, accountableLaps, Lap{Number: 6, FuelConsumed: -5, Duration: 0})
-	assert.NotContains(t, accountableLaps, Lap{Number: 0, FuelConsumed: 5, Duration: 0})
-	assert.Contains(t, accountableLaps, Lap{Number: 1, FuelConsumed: 5, Duration: 0})
+	assert.NotContains(t, accountableLaps, Lap{Number: 6, FuelStart: 5, FuelEnd: 10, Duration: 0})
+	assert.NotContains(t, accountableLaps, Lap{Number: 0, FuelStart: 10, FuelEnd: 5, Duration: 0})
+	assert.Contains(t, accountableLaps, Lap{Number: 1, FuelStart: 10, FuelEnd: 5, Duration: 0})
 }
