@@ -301,9 +301,7 @@
         const tireIcons = document.querySelectorAll('.tire');
 
         // Example temperatures in Celsius
-        debugger;
         var temperatures = data.tire_temperatures;
-        console.log(temperatures);
 
         function changeTemperature(index, newTemperature) {
             const tireText = document.querySelectorAll('.tire-text')[index];
@@ -312,46 +310,36 @@
 
         tireIcons.forEach((tire, index) => {
             const temperature = temperatures[index];
-            const color = getTemperatureColor(temperature);
+            const color = temperatureColor(temperature);
 
             changeTemperature(index,temperature);
 
             tire.setAttribute('fill', color);
         });
 
-        function getTemperatureColor(temperature) {
-            const minTemp = 0;
-            const maxTemp = 100;
-            const centerTemp = 70; // New center temperature
-            const range = maxTemp - minTemp;
+        function temperatureColor(temperature) {
+            // Clamp temperature between 0 and 130
+            temperature = Math.max(0, Math.min(130, temperature));
 
-            // Calculate the distance from the center temperature
-            const distanceFromCenter = Math.abs(temperature - centerTemp);
-            const normalizedDistance = distanceFromCenter / range;
+            // Define RGB values for blue, green, and red
+            const blue = [0, 0, 255];   // Full blue
+            const green = [0, 255, 0];  // Full green
+            const red = [255, 0, 0];    // Full red
 
-            // Define the range around the center temperature where green should dominate
-            const greenRange = 4; // Adjust this value to control the width of the green gradient
+            let color = [];
 
-            let red, green, blue;
-
-            if (distanceFromCenter <= greenRange) {
-                // Within the green range, blend green with red and blue
-                green = Math.round(255 - normalizedDistance * (255 / greenRange));
-                red = Math.round(normalizedDistance * (255 / greenRange));
-                blue = Math.round(normalizedDistance * (255 / greenRange));
+            if (temperature <= 70) {
+                // Interpolate between blue and green
+                const ratio = temperature / 70;
+                color = blue.map((value, index) => Math.round(value + ratio * (green[index] - value)));
             } else {
-                // Outside the green range, follow the original blue to red gradient
-                if (temperature < centerTemp) {
-                    blue = 255 - Math.round(normalizedDistance * 255);
-                    red = Math.round(normalizedDistance * 255);
-                } else {
-                    blue = Math.round(normalizedDistance * 255);
-                    red = 255 - Math.round(normalizedDistance * 255);
-                }
-                green = 0; // No green outside the green range
+                // Interpolate between green and red
+                const ratio = (temperature - 70) / 30;
+                color = green.map((value, index) => Math.round(value + ratio * (red[index] - value)));
             }
 
-            return `rgb(${red}, ${green}, ${blue})`;
+            // Convert RGB array to CSS color format (rgb(r, g, b))
+            return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
         }
 
 

@@ -13,7 +13,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/snipem/gt7tools v0.0.0-20240413075247-2da53d816e25 // indirect
+	github.com/snipem/gt7tools v0.0.0-20240413075526-a350d3eb60e7 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

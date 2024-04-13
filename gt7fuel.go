@@ -7,6 +7,7 @@ import (
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"github.com/snipem/gt7fuel/lib"
 	"github.com/snipem/gt7fuel/lib/experimental"
+	"github.com/snipem/gt7tools/lib/dump"
 	"log"
 	"net/http"
 	"net/url"
@@ -124,33 +125,47 @@ func main() {
 	raceTime := flag.Int("race-time", 60, "Race time in minutes")
 	twitchUrl := flag.String("twitch-url", "https://www.twitch.tv/snimat", "Twitch URL to parse")
 
+	dumpFile := flag.String("dump-file", "", "Dump file for loading dumped data instead of real telemetry")
+
 	// Parse command-line flags
 	flag.Parse()
 
 	fmt.Printf("Version: https://github.com/snipem/gt7fuel/commit/%s\n", GitCommit)
 
 	for {
-		run(*raceTime, *parseTwitch, *twitchUrl)
+		run(*raceTime, *parseTwitch, *twitchUrl, *dumpFile)
 		log.Println("Sleeping 10 seconds ...")
 		time.Sleep(10 * time.Second)
 	}
 
 }
 
-func run(raceTime int, parseTwitch bool, twitchResource string) {
+func run(raceTime int, parseTwitch bool, twitchResource string, dumpFilePath string) {
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
-	go func() {
 
-		for {
-			err := gt7c.Run()
-			if err != nil {
-				log.Printf("error running gt7c.Run(): %v", err)
-			}
-			log.Println("Sleeping 10 seconds before restarting gt7c.Run()")
-			time.Sleep(10 * time.Second)
+	if dumpFilePath != "" {
+
+		gt7dump, err := dump.NewGT7Dump(dumpFilePath, gt7c)
+		if err != nil {
+			log.Fatalf("Error loading dump file: %v", err)
 		}
-	}()
+		log.Println("Using dump file: ", dumpFilePath)
+		go gt7dump.Run()
+
+	} else {
+		go func() {
+
+			for {
+				err := gt7c.Run()
+				if err != nil {
+					log.Printf("error running gt7c.Run(): %v", err)
+				}
+				log.Println("Sleeping 10 seconds before restarting gt7c.Run()")
+				time.Sleep(10 * time.Second)
+			}
+		}()
+	}
 
 	gt7stats = lib.NewStats()
 
