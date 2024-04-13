@@ -20,4 +20,5 @@ type Message struct {
 	CurrentLapProgressAdjusted string  `json:"current_lap_progress_adjusted"`
 	FormattedLaps              string  `json:"formatted_laps"`
 	Tires                      string  `json:"tires"`
+	LapTimeDeviation           string  `json:"lap_time_deviation"`
 }

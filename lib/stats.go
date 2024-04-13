@@ -267,6 +267,12 @@ func (s *Stats) GetMessage() Message {
 		isValid = false
 	}
 
+	laptimedevitaion, err := s.GetLapTimeDeviation()
+	if err != nil {
+		errorMessages = append(errorMessages, fmt.Sprintf("Laptime deviation unknown: %v", err))
+		isValid = false
+	}
+
 	formattedLaps := getHtmlTableForLaps(s.Laps)
 
 	message := Message{
@@ -289,6 +295,7 @@ func (s *Stats) GetMessage() Message {
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
 		FormattedLaps:              formattedLaps,
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
+		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
 	}
 	return message
 

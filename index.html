@@ -158,6 +158,9 @@
         <b>Anteiliger Rundenfortschritt</b>
         <div id="current_lap_progress_adjusted"></div>
 
+        <b>Rundenzeit-Abweichung</b>
+        <div id="lap_time_deviation"></div>
+
         <b>Renn-Typ</b>
         <div id="end_of_race_type"></div>
         <b>Package Id</b>
@@ -217,6 +220,7 @@
         next_pit_stop.textContent = data.next_pit_stop;
         current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
         tires.textContent = data.tires;
+        lap_time_deviation.textContent = data.lap_time_deviation;
 
         var laps_div = document.getElementById('laps')
         laps_div.innerHTML = "";
