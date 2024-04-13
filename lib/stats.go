@@ -11,6 +11,22 @@ import (
 	"time"
 )
 
+type History struct {
+	Throttle []int
+	Brake    []int
+}
+
+func (h *History) Update(data gt7.GTData) {
+
+	h.Throttle = append(h.Throttle, int(data.Throttle))
+	h.Brake = append(h.Brake, int(data.Brake))
+}
+
+func (h *History) IsTrailBreakingIncreasing() bool {
+	return h.Brake[len(h.Brake)-1] > h.Brake[len(h.Brake)-2] &&
+		!straightIncreaseFromZeroBraking(h.Brake)
+}
+
 type Stats struct {
 	LastLoggedData gt7.GTData
 	Laps           []Lap
@@ -23,6 +39,7 @@ type Stats struct {
 	raceStartTime         time.Time
 	clock                 clock.Clock
 	ConnectionActive      bool
+	History               *History
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -73,6 +90,7 @@ func getFuelConsumptionLastLap(laps []Lap) (float32, error) {
 
 func NewStats() *Stats {
 	s := Stats{}
+	s.History = &History{}
 	s.LastLoggedData = gt7.GTData{}
 	s.LastData = &gt7.GTData{}
 	s.LastTireData = &experimental.TireData{}
@@ -299,7 +317,7 @@ func (s *Stats) GetMessage() Message {
 		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},
 		TCSActive:                  s.LastData.IsTCSEngaged,
 		ASMActive:                  s.LastData.IsASMEngaged,
-		RisingTrailbreaking:        s.IsRisingTrailbreaking(),
+		RisingTrailbreaking:        s.History.IsTrailBreakingIncreasing(),
 	}
 	return message
 
@@ -624,10 +642,4 @@ func (s *Stats) GetFuelDiv() (float32, error) {
 	fuelDiv := fuelNeededToFinishRaceInTotal - s.LastData.CurrentFuel
 	return fuelDiv, nil
 
-}
-
-func (s *Stats) IsRisingTrailbreaking() bool {
-
-	// FIXME implement me
-	return false
 }

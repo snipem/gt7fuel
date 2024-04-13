@@ -86,6 +86,7 @@
         width: 70%;
         background-color: red;
         margin: auto;
+        vertical-align: center;
     }
 
     /* Letzter Element in der ersten Spalte */
@@ -282,13 +283,15 @@
         tires.textContent = data.tires;
         lap_time_deviation.textContent = data.lap_time_deviation;
 
-        debugger;
-
         topAlertStripeColor = "none";
 
-        if (data.tcs_active) {
-            alert_stripe_top.textContent = "TCS aktiv";
+        if (data.rising_trailbreaking) {
+            alert_stripe_top.textContent = "Wieder ansteigendes Trailbreaking";
             topAlertStripeColor = "red";
+        }
+        else if (data.tcs_active) {
+            alert_stripe_top.textContent = "TCS aktiv";
+            topAlertStripeColor = "blue";
         } else {
             alert_stripe_top.textContent = "";
         }

@@ -94,7 +94,7 @@ func (t *TireData) String() string {
 // Html gives a html table for the tires relative to their position
 func (t *TireData) Html() string {
 	return fmt.Sprintf(
-		"<table>"+
+		"<table class='tiretable'>"+
 			"<tr>"+
 			"<td>%d<td>"+
 			"<td>%d<td>"+

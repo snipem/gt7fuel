@@ -25,33 +25,40 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 		gt7stats.ConnectionActive = false
 	}
 
-	gt7stats.LastData = ld
-	gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
+	if gt7stats.ConnectionActive {
 
-	if len(gt7stats.Laps) > 0 && ld.CurrentLap == 0 {
-		gt7stats.Reset()
-		resetOngoingLap(ld, gt7stats)
-		gt7stats.Laps = []Lap{}
+		gt7stats.LastData = ld
+
+		gt7stats.History.Update(*ld)
+
+		gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
+
+		if len(gt7stats.Laps) > 0 && ld.CurrentLap == 0 {
+			gt7stats.Reset()
+			resetOngoingLap(ld, gt7stats)
+			gt7stats.Laps = []Lap{}
+		}
+
+		if gt7stats.LastLoggedData.CurrentLap == 0 && ld.CurrentLap == 1 {
+			// First crossing of the line
+			gt7stats.Reset()
+			resetOngoingLap(ld, gt7stats)
+
+			log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
+		}
+
+		if gt7stats.OngoingLap.Number != ld.CurrentLap {
+			// Change of laps detected
+			finishLap(ld, gt7stats)
+		}
+
+		// FIXME Use deep copy here
+		gt7stats.LastLoggedData.FuelCapacity = ld.FuelCapacity
+		gt7stats.LastLoggedData.CurrentLap = ld.CurrentLap
+		gt7stats.LastLoggedData.PackageID = ld.PackageID
+		return true
 	}
-
-	if gt7stats.LastLoggedData.CurrentLap == 0 && ld.CurrentLap == 1 {
-		// First crossing of the line
-		gt7stats.Reset()
-		resetOngoingLap(ld, gt7stats)
-
-		log.Printf("RACE START 🏁 %s \n", gt7stats.raceStartTime.Format("2006-01-02 15:04:05"))
-	}
-
-	if gt7stats.OngoingLap.Number != ld.CurrentLap {
-		// Change of laps detected
-		finishLap(ld, gt7stats)
-	}
-
-	// FIXME Use deep copy here
-	gt7stats.LastLoggedData.FuelCapacity = ld.FuelCapacity
-	gt7stats.LastLoggedData.CurrentLap = ld.CurrentLap
-	gt7stats.LastLoggedData.PackageID = ld.PackageID
-	return true
+	return false
 }
 
 func resetOngoingLap(ld *gt7.GTData, gt7stats *Stats) {

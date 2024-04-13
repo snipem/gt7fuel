@@ -96,3 +96,30 @@ func getTimeLeftInRace(timeInRace time.Duration, totalDurationOfRace time.Durati
 	timeLeftInRace := totalDurationOfRace - timeInRace
 	return timeLeftInRace
 }
+
+func straightIncreaseFromZeroBraking(brake []int) bool {
+
+	// Ignore all values prior to last full brake
+	valuesSinceLastFullbrake := []int{}
+	for i := len(brake) - 1; i > 0; i-- {
+		valuesSinceLastFullbrake = append([]int{brake[i]}, valuesSinceLastFullbrake...)
+		if brake[i] == 0 {
+			break
+		}
+	}
+
+	if len(valuesSinceLastFullbrake) == 0 {
+		return false
+	}
+
+	for i := len(valuesSinceLastFullbrake) - 1; i > 0; i-- {
+		if valuesSinceLastFullbrake[i] < valuesSinceLastFullbrake[i-1] {
+			return false
+		}
+		if valuesSinceLastFullbrake[i] == 0 {
+			break
+		}
+	}
+
+	return true
+}
