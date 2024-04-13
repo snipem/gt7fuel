@@ -296,6 +296,7 @@ func (s *Stats) GetMessage() Message {
 		FormattedLaps:              formattedLaps,
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
+		TireTemperatures:           []float32{s.LastData.TyreTempFL, s.LastData.TyreTempFR, s.LastData.TyreTempRL, s.LastData.TyreTempRR},
 	}
 	return message
 

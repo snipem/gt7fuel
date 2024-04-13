@@ -194,24 +194,24 @@
     <div class="tire-container">
         <svg class="tire" viewBox="0 0 100 150">
             <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
-            <text class="tire-text" x="50" y="80" text-anchor="middle">10°</text>
+            <text class="tire-text" x="50" y="80" text-anchor="middle"></text>
         </svg>
 
         <svg class="tire" viewBox="0 0 100 150">
             <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
-            <text class="tire-text" x="50" y="80" text-anchor="middle">20°</text>
+            <text class="tire-text" x="50" y="80" text-anchor="middle"></text>
         </svg>
     </div>
 
     <div class="tire-container">
         <svg class="tire" viewBox="0 0 100 150">
             <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
-            <text class="tire-text" x="50" y="80" text-anchor="middle">30°</text>
+            <text class="tire-text" x="50" y="80" text-anchor="middle"></text>
         </svg>
 
         <svg class="tire" viewBox="0 0 100 150">
             <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
-            <text class="tire-text" x="50" y="80" text-anchor="middle">40°</text>
+            <text class="tire-text" x="50" y="80" text-anchor="middle"></text>
         </svg>
     </div>
 
@@ -290,7 +290,9 @@
         const tireIcons = document.querySelectorAll('.tire');
 
         // Example temperatures in Celsius
-        const temperatures = [50, 55, 30, 71];
+        debugger;
+        var temperatures = data.tire_temperatures;
+        console.log(temperatures);
 
         function changeTemperature(index, newTemperature) {
             const tireText = document.querySelectorAll('.tire-text')[index];
