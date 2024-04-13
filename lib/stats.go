@@ -63,7 +63,7 @@ func getFuelConsumptionLastLap(laps []Lap) (float32, error) {
 
 	lastLap := laps[len(laps)-1]
 	// if last lap was a pit lap, take the lap before
-	if lastLap.GetFuelConsumed() < 0 {
+	if lastLap.GetFuelConsumed() < 0 && lastLap.PreviousLap != nil {
 		return lastLap.PreviousLap.GetFuelConsumed(), nil
 	}
 
@@ -296,7 +296,10 @@ func (s *Stats) GetMessage() Message {
 		FormattedLaps:              formattedLaps,
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
-		TireTemperatures:           []float32{s.LastData.TyreTempFL, s.LastData.TyreTempFR, s.LastData.TyreTempRL, s.LastData.TyreTempRR},
+		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},
+		TCSActive:                  s.LastData.IsASMEngaged,
+		ASMActive:                  s.LastData.IsASMEngaged,
+		RisingTrailbreaking:        s.IsRisingTrailbreaking(),
 	}
 	return message
 
@@ -617,4 +620,10 @@ func (s *Stats) GetFuelDiv() (float32, error) {
 	fuelDiv := fuelNeededToFinishRaceInTotal - s.LastData.CurrentFuel
 	return fuelDiv, nil
 
+}
+
+func (s *Stats) IsRisingTrailbreaking() bool {
+
+	// FIXME implement me
+	return false
 }
