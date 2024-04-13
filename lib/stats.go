@@ -120,7 +120,7 @@ func (l Lap) TireConsumptionOnAllTires() experimental.TireDelta {
 }
 
 func (l Lap) IsRegularLap() bool {
-	if l.Number == 0 {
+	if l.Number < 2 { // the first lap is not a regular lap, since it takes longer due to cold start etc
 		return false
 	}
 

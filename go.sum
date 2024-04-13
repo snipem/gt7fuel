@@ -10,12 +10,9 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/snipem/go-gt7-telemetry v0.0.0-20240403094644-aa38c51d7166 h1:nrR3G7FfDJIMQ6mOXEx/CE/5HG1e3VFicr3qiTO5i7Q=
 github.com/snipem/go-gt7-telemetry v0.0.0-20240403094644-aa38c51d7166/go.mod h1:L3dokjrYaT97ABVpKwSF6clg/4ghfLhePZildj3p5Yo=
-github.com/snipem/gt7tools v0.0.0-20240413075247-2da53d816e25 h1:mCRHoE3YrUX6sFC5bUvM6bOiYomLeUupB8X4kyizh1Y=
-github.com/snipem/gt7tools v0.0.0-20240413075247-2da53d816e25/go.mod h1:zB8ehI/aVnrKBdVxF1baYAaixdFN+QHV9UOAiJSorQc=
 github.com/snipem/gt7tools v0.0.0-20240413075526-a350d3eb60e7 h1:y9CVfC8eC38IZ/IqQ9INpSXvRSBKaFx7af56rWk3wk4=
 github.com/snipem/gt7tools v0.0.0-20240413075526-a350d3eb60e7/go.mod h1:zB8ehI/aVnrKBdVxF1baYAaixdFN+QHV9UOAiJSorQc=
-github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
-github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
+github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 golang.org/x/crypto v0.19.0 h1:ENy+Az/9Y1vSrlrvBSyna3PITt4tiZLf7sgCjZBX7Wo=
 golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=

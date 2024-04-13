@@ -52,6 +52,7 @@ func GetAccountableFuelConsumption(laps []Lap) []float32 {
 }
 
 func getAccountableLaps(laps []Lap) []Lap {
+	// FIXME maybe ignore the first lap since it takes way longer
 	var lapsAccountable []Lap
 	for _, lap := range laps {
 		if lap.GetFuelConsumed() >= 0 && lap.Number > 0 {

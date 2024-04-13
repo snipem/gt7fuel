@@ -547,12 +547,13 @@ func Test_getFuelConsumptionLastLap(t *testing.T) {
 
 func Test_getLapTimeDeviation(t *testing.T) {
 	stdDev, err := getLapTimeDeviation([]Lap{
-		{Duration: 1*time.Minute + 1*time.Second, Number: 1},
+		{Duration: 10*time.Minute + 1*time.Second, Number: 1}, // does not count
 		{Duration: 1*time.Minute + 4*time.Second, Number: 2},
 		{Duration: 1*time.Minute + 2*time.Second, Number: 3},
+		{Duration: 1*time.Minute + 3*time.Second, Number: 4},
 	})
 	assert.NoError(t, err)
-	assert.LessOrEqual(t, stdDev, 10*time.Second)
+	assert.LessOrEqual(t, stdDev, 1*time.Second)
 	fmt.Println("Std Dev Time: ", GetSportFormat(stdDev))
 }
 
