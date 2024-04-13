@@ -96,7 +96,7 @@ type Lap struct {
 
 func (l Lap) String() string {
 	return fmt.Sprintf("Lap %d: FuelStart=%.2f, FuelEnd=%.2f, FuelConsumed=%.2f, Duration=%s",
-		l.Number, l.FuelStart, l.FuelEnd, l.GetFuelConsumed(), l.Duration)
+		l.Number, l.FuelStart, l.FuelEnd, l.GetFuelConsumed(), GetSportFormat(l.Duration))
 }
 
 func (l *Lap) GetTotalRaceDurationAtStartOfLap() time.Duration {
@@ -261,7 +261,7 @@ func (s *Stats) GetMessage() Message {
 		isValid = false
 	}
 
-	raceduration, err := s.getRaceDuration()
+	raceduration, err := s.GetRaceDuration()
 	if err != nil {
 		errorMessages = append(errorMessages, fmt.Sprintf("Raceduration unknown: %v", err))
 		isValid = false
@@ -297,7 +297,7 @@ func (s *Stats) GetMessage() Message {
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
 		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},
-		TCSActive:                  s.LastData.IsASMEngaged,
+		TCSActive:                  s.LastData.IsTCSEngaged,
 		ASMActive:                  s.LastData.IsASMEngaged,
 		RisingTrailbreaking:        s.IsRisingTrailbreaking(),
 	}
@@ -307,7 +307,7 @@ func (s *Stats) GetMessage() Message {
 
 func getHtmlTableForLaps(laps []Lap) string {
 
-	html := "<table>\n"
+	html := "<table class='laptable'>\n"
 
 	// Header
 	html += "\t<tr>\n" +
@@ -379,7 +379,7 @@ func (s *Stats) getLapsLeftInRace() (int16, error) {
 			return -1, fmt.Errorf("error getting duration since start: %v", err)
 		}
 
-		raceDuration, err := s.getRaceDuration()
+		raceDuration, err := s.GetRaceDuration()
 		if err != nil {
 			return -1, fmt.Errorf("error getting duration since start: %v", err)
 		}
@@ -435,7 +435,7 @@ func (s *Stats) getTotalLapsInRace() (int16, error) {
 		return -1, fmt.Errorf("BestLap is 0, impossible to calculate total laps based on lap time")
 	}
 
-	raceDuration, err := s.getRaceDuration()
+	raceDuration, err := s.GetRaceDuration()
 	if err != nil {
 		return -1, fmt.Errorf("error getting duration since start: %v", err)
 	}
@@ -448,17 +448,21 @@ func (s *Stats) getTotalLapsInRace() (int16, error) {
 	}
 	return lapsLeftInRace, nil
 }
-func (s *Stats) getRaceDuration() (time.Duration, error) {
+func (s *Stats) GetRaceDuration() (time.Duration, error) {
 	referenceLap, err := s.getReferenceLapDuration()
 	if err != nil {
 		return 0, fmt.Errorf("error getting reference lap: %v", err)
 	}
-	if s.LastData.TotalLaps > 0 {
-		return referenceLap * time.Duration(s.LastData.TotalLaps), nil
+	return getRaceDuration(s.LastData.TotalLaps, s.ManualSetRaceDuration, referenceLap)
+}
+
+func getRaceDuration(totalLaps int16, manualSetRaceDuration time.Duration, referenceLap time.Duration) (time.Duration, error) {
+	if totalLaps > 0 {
+		return referenceLap * time.Duration(totalLaps), nil
 	} else {
 		// Add a lap to the manual set race duration because there might be an additional lap
 		// This is the only place we account for this matter
-		return s.ManualSetRaceDuration + referenceLap, nil
+		return manualSetRaceDuration + referenceLap, nil
 	}
 }
 
@@ -593,7 +597,7 @@ func (s *Stats) GetFuelNeededToFinishRaceInTotal() (float32, error) {
 		return -1, fmt.Errorf("error getting reference lap: %v", err)
 	}
 
-	raceDuration, err := s.getRaceDuration()
+	raceDuration, err := s.GetRaceDuration()
 	if err != nil {
 		return -1, fmt.Errorf("error getting race duration: %v", err)
 	}

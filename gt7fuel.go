@@ -91,8 +91,8 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		err := ws.WriteJSON(gt7stats.GetMessage())
 
 		if err != nil {
-			log.Printf("Error writing JSON: %s\n", err)
-			time.Sleep(10 * time.Second)
+			log.Printf("Error writing JSON: %s, ending connection\n", err)
+			return // return browser has to reestablish connection
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -141,6 +141,9 @@ func main() {
 }
 
 func run(raceTime int, parseTwitch bool, twitchResource string, dumpFilePath string) {
+
+	// set global var from parameter
+	raceTimeInMinutes = raceTime
 
 	gt7c = gt7.NewGT7Communication("255.255.255.255")
 

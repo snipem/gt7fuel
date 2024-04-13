@@ -84,7 +84,6 @@
         /*background-color: #ffffff00;*/
         height: 50px;
         width: 70%;
-        border: 1px solid red;
         background-color: red;
         margin: auto;
     }
@@ -282,6 +281,19 @@
         current_lap_progress_adjusted.textContent = data.current_lap_progress_adjusted;
         tires.textContent = data.tires;
         lap_time_deviation.textContent = data.lap_time_deviation;
+
+        debugger;
+
+        topAlertStripeColor = "none";
+
+        if (data.tcs_active) {
+            alert_stripe_top.textContent = "TCS aktiv";
+            topAlertStripeColor = "red";
+        } else {
+            alert_stripe_top.textContent = "";
+        }
+
+        document.getElementById("alert_stripe_top").style.background = topAlertStripeColor;
 
         var laps_div = document.getElementById('laps')
         laps_div.innerHTML = "";
