@@ -142,3 +142,9 @@ func Test_getAccountableLaps(t *testing.T) {
 	assert.NotContains(t, accountableLaps, Lap{Number: 0, FuelStart: 10, FuelEnd: 5, Duration: 0})
 	assert.Contains(t, accountableLaps, Lap{Number: 1, FuelStart: 10, FuelEnd: 5, Duration: 0})
 }
+
+func TestGetSportFormat(t *testing.T) {
+	assert.Equal(t, "01:00:00.000", GetSportFormat(time.Duration(time.Hour*1)))
+	assert.Equal(t, "10:00.000", GetSportFormat(time.Duration(time.Minute*10)))
+	assert.Equal(t, "-10:10.000", GetSportFormat(time.Duration(-time.Minute*10-time.Second*10)))
+}

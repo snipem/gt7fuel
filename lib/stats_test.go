@@ -544,3 +544,34 @@ func Test_getFuelConsumptionLastLap(t *testing.T) {
 
 	})
 }
+
+func Test_getLapTimeDeviation(t *testing.T) {
+	stdDev, err := getLapTimeDeviation([]Lap{
+		{Duration: 1*time.Minute + 1*time.Second, Number: 1},
+		{Duration: 1*time.Minute + 4*time.Second, Number: 2},
+		{Duration: 1*time.Minute + 2*time.Second, Number: 3},
+	})
+	assert.NoError(t, err)
+	assert.LessOrEqual(t, stdDev, 10*time.Second)
+	fmt.Println("Std Dev Time: ", GetSportFormat(stdDev))
+}
+
+func TestLap_IsRegularLap(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		previousLap := Lap{Duration: 1 * time.Minute, Number: 1, PreviousLap: nil}
+		lap := Lap{Duration: 1 * time.Minute, Number: 2, PreviousLap: &previousLap}
+		assert.True(t, lap.IsRegularLap())
+	})
+
+	t.Run("Box Laps", func(t *testing.T) {
+		previousLap := Lap{Duration: 1 * time.Minute, Number: 1, PreviousLap: nil}
+		lap := Lap{Duration: 1 * time.Minute, Number: 2, PreviousLap: &previousLap, FuelStart: 1, FuelEnd: 5}
+		assert.False(t, lap.IsRegularLap())
+	})
+
+	t.Run("Is Out Lap", func(t *testing.T) {
+		previousLap := Lap{Duration: 1 * time.Minute, Number: 1, PreviousLap: nil, FuelStart: 50, FuelEnd: 100}
+		lap := Lap{Duration: 1 * time.Minute, Number: 2, PreviousLap: &previousLap, FuelStart: 100, FuelEnd: 95}
+		assert.False(t, lap.IsRegularLap())
+	})
+}

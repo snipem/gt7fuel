@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"github.com/jmhodges/clock"
+	"github.com/montanaflynn/stats"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"github.com/snipem/gt7fuel/lib/experimental"
 	"math"
@@ -22,6 +23,33 @@ type Stats struct {
 	raceStartTime         time.Time
 	clock                 clock.Clock
 	ConnectionActive      bool
+}
+
+func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
+	return getLapTimeDeviation(s.Laps)
+}
+
+func getLapTimeDeviation(laps []Lap) (time.Duration, error) {
+
+	if len(laps) < 2 {
+		return 0, fmt.Errorf("not enough laps to calculate lap time deviation, nr of laps: %d", len(laps))
+	}
+
+	lapTimes := []time.Duration{}
+	for _, lap := range laps {
+		if lap.IsRegularLap() {
+			lapTimes = append(lapTimes, lap.Duration)
+		}
+	}
+
+	floatData := stats.LoadRawData(lapTimes)
+	standardDeviation, err := floatData.StandardDeviation()
+	if err != nil {
+		return 0, err
+	}
+	stdDevDuration := time.Duration(standardDeviation)
+	return stdDevDuration, nil
+
 }
 
 func (s *Stats) GetFuelConsumptionLastLap() (float32, error) {
@@ -89,6 +117,30 @@ func (l Lap) GetFuelConsumed() float32 {
 func (l Lap) TireConsumptionOnAllTires() experimental.TireDelta {
 	td := experimental.TireDelta{FrontLeft: l.TiresStart.FrontLeft - l.TiresEnd.FrontLeft, FrontRight: l.TiresStart.FrontRight - l.TiresEnd.FrontRight, RearLeft: l.TiresStart.RearLeft - l.TiresEnd.RearLeft, RearRight: l.TiresStart.RearRight - l.TiresEnd.RearRight}
 	return td
+}
+
+func (l Lap) IsRegularLap() bool {
+	if l.Number == 0 {
+		return false
+	}
+
+	if l.IsOutLapFromPit() || l.IsLapIntoPit() {
+		return false
+	}
+
+	return true
+
+}
+
+func (l Lap) IsOutLapFromPit() bool {
+	if l.PreviousLap != nil {
+		return l.PreviousLap.IsLapIntoPit()
+	}
+	return false
+}
+
+func (l Lap) IsLapIntoPit() bool {
+	return l.GetFuelConsumed() < 0
 }
 
 func (s *Stats) Reset() {

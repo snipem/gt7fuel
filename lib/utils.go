@@ -14,14 +14,24 @@ func RoundUpAlways(d float32) int32 {
 	return simpleRoundRup
 }
 func GetSportFormat(duration time.Duration) string {
+
+	sign := ""
+
+	if duration < 0 {
+		duration = -duration
+		sign = "-"
+	}
+
 	hours := int(duration.Hours())
 	minutes := int(duration.Minutes()) % 60
 	seconds := int(duration.Seconds()) % 60
 	milliseconds := duration.Milliseconds() % 1000
 
-	// If hours are present, accumulate them into minutes
-	minutes += hours * 60
-	return fmt.Sprintf("%02d:%02d.%03d", minutes, seconds, milliseconds)
+	if hours > 0 {
+		return fmt.Sprintf("%s%02d:%02d:%02d.%03d", sign, hours, minutes, seconds, milliseconds)
+	}
+
+	return fmt.Sprintf("%s%02d:%02d.%03d", sign, minutes, seconds, milliseconds)
 
 }
 func GetDurationFromGT7Time(gt7time int32) time.Duration {
