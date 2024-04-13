@@ -95,6 +95,30 @@
         flex: 1;
     }
 
+    .tire-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100px; /* Adjust width as needed */
+        height: 100px; /* Adjust height as needed */
+        border: 1px solid black; /* Just for visualization */
+        padding: 5px;
+        box-sizing: border-box;
+    }
+
+    .tire {
+        width: 20px;
+        height: 30px;
+        border-radius: 5px;
+        cursor: pointer; /* Make it look clickable */
+    }
+
+    .tire-text {
+        font-family: Arial, sans-serif;
+        font-size: 40px;
+        fill: white;
+    }
+
 </style>
 <body>
 <div class="row">
@@ -166,6 +190,32 @@
         <b>Package Id</b>
         <div id="package_id"></div>
     </div>
+
+    <div class="tire-container">
+        <svg class="tire" viewBox="0 0 100 150">
+            <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
+            <text class="tire-text" x="50" y="80" text-anchor="middle">10°</text>
+        </svg>
+
+        <svg class="tire" viewBox="0 0 100 150">
+            <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
+            <text class="tire-text" x="50" y="80" text-anchor="middle">20°</text>
+        </svg>
+    </div>
+
+    <div class="tire-container">
+        <svg class="tire" viewBox="0 0 100 150">
+            <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
+            <text class="tire-text" x="50" y="80" text-anchor="middle">30°</text>
+        </svg>
+
+        <svg class="tire" viewBox="0 0 100 150">
+            <rect class="tire-rect" x="10" y="10" width="80" height="130" rx="15" />
+            <text class="tire-text" x="50" y="80" text-anchor="middle">40°</text>
+        </svg>
+    </div>
+
+    </div>
 </div>
 
 <p>
@@ -236,6 +286,61 @@
         }
 
         error_message.textContent = data.error_message;
+
+        const tireIcons = document.querySelectorAll('.tire');
+
+        // Example temperatures in Celsius
+        const temperatures = [50, 55, 30, 71];
+
+        function changeTemperature(index, newTemperature) {
+            const tireText = document.querySelectorAll('.tire-text')[index];
+            tireText.textContent = newTemperature + '°';
+        }
+
+        tireIcons.forEach((tire, index) => {
+            const temperature = temperatures[index];
+            const color = getTemperatureColor(temperature);
+
+            changeTemperature(index,temperature);
+
+            tire.setAttribute('fill', color);
+        });
+
+        function getTemperatureColor(temperature) {
+            const minTemp = 0;
+            const maxTemp = 100;
+            const centerTemp = 70; // New center temperature
+            const range = maxTemp - minTemp;
+
+            // Calculate the distance from the center temperature
+            const distanceFromCenter = Math.abs(temperature - centerTemp);
+            const normalizedDistance = distanceFromCenter / range;
+
+            // Define the range around the center temperature where green should dominate
+            const greenRange = 4; // Adjust this value to control the width of the green gradient
+
+            let red, green, blue;
+
+            if (distanceFromCenter <= greenRange) {
+                // Within the green range, blend green with red and blue
+                green = Math.round(255 - normalizedDistance * (255 / greenRange));
+                red = Math.round(normalizedDistance * (255 / greenRange));
+                blue = Math.round(normalizedDistance * (255 / greenRange));
+            } else {
+                // Outside the green range, follow the original blue to red gradient
+                if (temperature < centerTemp) {
+                    blue = 255 - Math.round(normalizedDistance * 255);
+                    red = Math.round(normalizedDistance * 255);
+                } else {
+                    blue = Math.round(normalizedDistance * 255);
+                    red = 255 - Math.round(normalizedDistance * 255);
+                }
+                green = 0; // No green outside the green range
+            }
+
+            return `rgb(${red}, ${green}, ${blue})`;
+        }
+
 
     });
 </script>
