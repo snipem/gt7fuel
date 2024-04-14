@@ -26,6 +26,8 @@ var gt7c *gt7.GT7Communication
 var gt7stats *lib.Stats
 var raceTimeInMinutes int
 
+var WaitTime = 100 * time.Millisecond
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
@@ -33,8 +35,12 @@ var upgrader = websocket.Upgrader{
 func LogRace(c *gt7.GT7Communication, gt7stats *lib.Stats, i *int) {
 	for {
 		lib.LogTick(&c.LastData, gt7stats, i)
-		time.Sleep(100 * time.Millisecond)
+		wait()
 	}
+}
+
+func wait() {
+	time.Sleep(WaitTime)
 }
 func open(url string) error {
 	var cmd string
@@ -109,7 +115,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 				log.Printf("Saved %0.f%% messages because of check for equality", 100*float64(equalMessageCounter)/float64(counter))
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			wait()
 			oldPackageId = gt7c.LastData.PackageID
 			counter = 0
 		}
