@@ -28,8 +28,11 @@
     }
     th, td {
         border: 1px solid white;
-        padding: 8px;
-        text-align: left;
+        text-align: center;
+    }
+
+    .tirerow {
+        border: 0;
     }
 
     body {
@@ -78,15 +81,6 @@
     .stats_column {
         flex: 1;
         margin-right: 20px; /* Optional: Abstand zwischen den Spalten */
-    }
-
-    .alert_stripe {
-        /*background-color: #ffffff00;*/
-        height: 50px;
-        width: 70%;
-        background-color: red;
-        margin: auto;
-        vertical-align: center;
     }
 
     /* Letzter Element in der ersten Spalte */
@@ -241,7 +235,7 @@
 </div>
 
 <div id="error_message_container">
-    <pre id="error_message"></pre>
+    <div id="error_message"></div>
 </div>
 
 <script>
@@ -285,26 +279,6 @@
 
         topAlertStripeColor = "none";
 
-        if (data.rising_trailbreaking) {
-            alert_stripe_top.textContent = "Wieder ansteigendes Trailbreaking";
-            topAlertStripeColor = "red";
-            document.body.style.background = "red";
-        }
-        else if (data.tcs_active) {
-            alert_stripe_top.textContent = "TCS aktiv";
-            topAlertStripeColor = "blue";
-            document.body.style.background = "lightblue";
-        } else {
-            alert_stripe_top.textContent = "";
-        }
-
-        document.getElementById("alert_stripe_top").style.background = topAlertStripeColor;
-
-        var laps_div = document.getElementById('laps')
-        laps_div.innerHTML = "";
-        // FIXME: Use innerhtml directly
-        laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
-
         if (!data.valid_state) {
             document.body.style.background = "#947b00";
             // fuel_div.textContent = "-";
@@ -312,6 +286,21 @@
             // fuel_needed_to_finish_race.textContent = "-";
             // laps_left_in_race.textContent = "-";
         }
+
+        if (data.rising_trailbreaking) {
+            document.body.style.background = "red";
+        }
+        else if (data.tcs_active) {
+            document.body.style.background = "lightblue";
+        } else {
+            alert_stripe_top.textContent = "";
+        }
+
+        var laps_div = document.getElementById('laps')
+        laps_div.innerHTML = "";
+        // FIXME: Use innerhtml directly
+        laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
+
 
         error_message.textContent = data.error_message;
 

@@ -95,11 +95,11 @@ func (t *TireData) String() string {
 func (t *TireData) Html() string {
 	return fmt.Sprintf(
 		"<table class='tiretable'>"+
-			"<tr>"+
+			"<tr class='tirerow'>"+
 			"<td>%d<td>"+
 			"<td>%d<td>"+
 			"</tr>"+
-			"<tr>"+
+			"<tr class='tirerow'>"+
 			"<td>%d<td>"+
 			"<td>%d<td>"+
 			"</tr>"+

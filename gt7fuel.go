@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"runtime"
 	"strconv"
 	"time"
@@ -83,20 +84,41 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 	log.Println("Have websocket connection")
 
+	lastMessage := lib.Message{}
 	counter := 0
+	equalMessageCounter := 0
+	oldPackageId := int32(0)
 	for {
-		counter++
-		gt7stats.SetManualSetRaceDuration(time.Duration(raceTimeInMinutes) * time.Minute)
+		if oldPackageId != gt7c.LastData.PackageID {
+			counter++
 
-		err := ws.WriteJSON(gt7stats.GetMessage())
+			gt7stats.SetManualSetRaceDuration(time.Duration(raceTimeInMinutes) * time.Minute)
 
-		if err != nil {
-			log.Printf("Error writing JSON: %s, ending connection\n", err)
-			return // return browser has to reestablish connection
+			message := gt7stats.GetMessage()
+			if !reflect.DeepEqual(lastMessage, message) {
+				err = ws.WriteJSON(message)
+				if err != nil {
+					log.Printf("Error writing JSON: %s, ending connection\n", err)
+					return // return browser has to reestablish connection
+				}
+				lastMessage = message
+			} else {
+				equalMessageCounter++
+			}
+			if counter%1000 == 0 {
+				log.Printf("Saved %0.f%% messages because of check for equality", 100*float64(equalMessageCounter)/float64(counter))
+			}
+
+			time.Sleep(100 * time.Millisecond)
+			oldPackageId = gt7c.LastData.PackageID
+			counter = 0
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func isEqualMessage(m lib.Message, m2 lib.Message) bool {
+	// TODO maybe implement me
+	return false
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
