@@ -288,10 +288,12 @@
         if (data.rising_trailbreaking) {
             alert_stripe_top.textContent = "Wieder ansteigendes Trailbreaking";
             topAlertStripeColor = "red";
+            document.body.style.background = "red";
         }
         else if (data.tcs_active) {
             alert_stripe_top.textContent = "TCS aktiv";
             topAlertStripeColor = "blue";
+            document.body.style.background = "lightblue";
         } else {
             alert_stripe_top.textContent = "";
         }

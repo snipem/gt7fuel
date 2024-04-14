@@ -23,7 +23,7 @@ func (h *History) Update(data gt7.GTData) {
 }
 
 func (h *History) IsTrailBreakingIncreasing() bool {
-	return h.Brake[len(h.Brake)-1] > h.Brake[len(h.Brake)-2] &&
+	return len(h.Brake) > 1 && h.Brake[len(h.Brake)-1] > h.Brake[len(h.Brake)-2] &&
 		!straightIncreaseFromZeroBraking(h.Brake)
 }
 
