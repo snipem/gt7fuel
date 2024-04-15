@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func LogRace(c *gt7.GT7Communication, gt7stats *lib.Stats, i *int) {
-	for {
+	for gt7stats.ShallRun {
 		lib.LogTick(&c.LastData, gt7stats, i)
 		wait()
 	}

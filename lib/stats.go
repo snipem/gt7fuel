@@ -40,6 +40,7 @@ type Stats struct {
 	clock                 clock.Clock
 	ConnectionActive      bool
 	History               *History
+	ShallRun              bool
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -97,6 +98,7 @@ func NewStats() *Stats {
 	s.ConnectionActive = false
 	// set a proper clock
 	s.setClock(clock.New())
+	s.ShallRun = true
 	return &s
 }
 
@@ -325,28 +327,35 @@ func (s *Stats) GetMessage() Message {
 
 func getHtmlTableForLaps(laps []Lap) string {
 
-	html := "<table class='laptable'>\n"
-
 	// Header
-	html += "\t<tr>\n" +
-		fmt.Sprintf("\t\t<th>#</th>\n") +
-		fmt.Sprintf("\t\t<th>Duration</th>\n") +
-		fmt.Sprintf("\t\t<th>Time</th>\n") +
-		fmt.Sprintf("\t\t<th>Fuel</th>\n") +
-		fmt.Sprintf("\t\t<th>Tires</th>\n") +
-		"\t</tr>\n"
+	html := fmt.Sprintf("<table class='laptable'>" +
+		"\t<tr>\n" +
+		"\t\t<th>#</th>\n" +
+		"\t\t<th>Duration</th>\n" +
+		"\t\t<th>Time</th>\n" +
+		"\t\t<th>Fuel</th>\n" +
+		"\t\t<th>Tires</th>\n" +
+		"\t</tr>\n",
+	)
 
 	for i := len(laps) - 1; i >= 0; i-- {
 
 		lap := laps[i]
 
-		html += "\t<tr>\n" +
-			fmt.Sprintf("\t\t<td>%d</td>\n", lap.Number) +
-			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap())) +
-			fmt.Sprintf("\t\t<td>%s</td>\n", GetSportFormat(lap.Duration)) +
-			fmt.Sprintf("\t\t<td>%.1f%%</td>\n", lap.GetFuelConsumed()) +
-			fmt.Sprintf("\t\t<td>%s</td>\n", lap.TiresEnd.Html()) +
-			"\t</tr>\n"
+		html += fmt.Sprintf(
+			"\t<tr>\n"+
+				"\t\t<td>%d</td>\n"+
+				"\t\t<td>%s</td>\n"+
+				"\t\t<td>%s</td>\n"+
+				"\t\t<td>%.1f%%</td>\n"+
+				"\t\t<td>%s</td>\n"+
+				"\t</tr>\n",
+			lap.Number,
+			GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap()),
+			GetSportFormat(lap.Duration),
+			lap.GetFuelConsumed(),
+			lap.TiresEnd.Html(),
+		)
 	}
 	html += "</table>\n"
 	return html

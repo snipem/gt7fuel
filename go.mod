@@ -7,7 +7,7 @@ require (
 	github.com/jmhodges/clock v1.2.0
 	github.com/montanaflynn/stats v0.7.1
 	github.com/snipem/go-gt7-telemetry v0.0.0-20240403094644-aa38c51d7166
-	github.com/snipem/gt7tools v0.0.0-20240414101203-50b9c026095a
+	github.com/snipem/gt7tools v0.0.0-20240415065935-7c23d8b916df
 	github.com/stretchr/testify v1.9.0
 )
 

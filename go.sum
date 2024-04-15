@@ -16,6 +16,8 @@ github.com/snipem/gt7tools v0.0.0-20240414084242-a05b857ec6a5 h1:H0ZVL6C7TrqM4A7
 github.com/snipem/gt7tools v0.0.0-20240414084242-a05b857ec6a5/go.mod h1:zB8ehI/aVnrKBdVxF1baYAaixdFN+QHV9UOAiJSorQc=
 github.com/snipem/gt7tools v0.0.0-20240414101203-50b9c026095a h1:1GcmxiEG0y7FYFfz5HC0hFx6g4yEifSzIs3H8+W6mtg=
 github.com/snipem/gt7tools v0.0.0-20240414101203-50b9c026095a/go.mod h1:zB8ehI/aVnrKBdVxF1baYAaixdFN+QHV9UOAiJSorQc=
+github.com/snipem/gt7tools v0.0.0-20240415065935-7c23d8b916df h1:yVzw9IU26xB5ki9NBkPiuF/WRLYKYU6Ly+3p9Vf7jg0=
+github.com/snipem/gt7tools v0.0.0-20240415065935-7c23d8b916df/go.mod h1:zB8ehI/aVnrKBdVxF1baYAaixdFN+QHV9UOAiJSorQc=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 golang.org/x/crypto v0.19.0 h1:ENy+Az/9Y1vSrlrvBSyna3PITt4tiZLf7sgCjZBX7Wo=
