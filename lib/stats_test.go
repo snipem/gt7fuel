@@ -576,3 +576,21 @@ func TestLap_IsRegularLap(t *testing.T) {
 		assert.False(t, lap.IsRegularLap())
 	})
 }
+
+func Test_getTravelledDistanceInMeters(t *testing.T) {
+	t.Run("One Hour Drive", func(t *testing.T) {
+		// One Hour in Packages, car should travel 100 km with 100km/h if this is right
+		oneHourInPackages := 60 * 60 * 1000 / 16
+		packageDuration := packageNumbersToDuration(int32(oneHourInPackages))
+		assert.Equal(t, 100 * 1000, getTravelledDistanceInMeters(float32(100), packageDuration))
+	})
+
+}
+
+func Test_packagesToDuration(t *testing.T) {
+	assert.Equal(t, 16 * time.Millisecond, packageNumbersToDuration(1))
+	assert.Equal(t, 1600 * time.Millisecond, packageNumbersToDuration(100))
+	oneHourInPackages := 60 * 60 * 1000 / 16
+	assert.Equal(t, 1*time.Hour, packageNumbersToDuration(int32(oneHourInPackages)))
+
+}

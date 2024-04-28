@@ -39,7 +39,7 @@ func Test_getSportFormat(t *testing.T) {
 
 	t.Run("getSportFormatWithHours", func(t *testing.T) {
 		formattedTime := GetSportFormat(2*time.Hour + 1*time.Minute + 30*time.Second + 10*time.Millisecond)
-		assert.Equal(t, "121:30.010", formattedTime)
+		assert.Equal(t, "02:01:30.010", formattedTime)
 	})
 }
 func Test_calculateFuelNeededToFinishRace(t *testing.T) {

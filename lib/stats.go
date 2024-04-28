@@ -12,14 +12,49 @@ import (
 )
 
 type History struct {
-	Throttle []int
-	Brake    []int
+	Throttle          []int
+	Brake             []int
+	CarSpeed          []int
+	PackageId         []int32
+	TravelledDistance []float32
 }
 
 func (h *History) Update(data gt7.GTData) {
 
+	lastPackageId := int32(0)
+	if len(h.PackageId) > 0 {
+		lastPackageId = h.PackageId[len(h.PackageId)-1]
+	}
+
+	h.PackageId = append(h.PackageId, data.PackageID)
+
 	h.Throttle = append(h.Throttle, int(data.Throttle))
 	h.Brake = append(h.Brake, int(data.Brake))
+	h.CarSpeed = append(h.CarSpeed, int(data.CarSpeed))
+
+	if len(h.TravelledDistance) > 0 {
+		packageDuration := packageNumbersToDuration(data.PackageID - lastPackageId)
+		h.TravelledDistance = append(h.TravelledDistance,
+			h.TravelledDistance[len(h.TravelledDistance)-1],
+			getTravelledDistanceInMeters(data.CarSpeed, packageDuration))
+	} else {
+		h.TravelledDistance = append(h.TravelledDistance, float32(0))
+	}
+
+	fmt.Printf("%f m\n", h.TravelledDistance[len(h.TravelledDistance)-1])
+}
+
+func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) float32 {
+
+	distancePerHourTravelledInMeters := carSpeed * 1000
+	vmsM := distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+
+	travelledDistance := vmsM * float32(duration.Milliseconds())
+	return travelledDistance
+
+}
+func packageNumbersToDuration(i int32) time.Duration {
+	return time.Duration(i * 16) * time.Millisecond
 }
 
 func (h *History) IsTrailBreakingIncreasing() bool {
