@@ -89,7 +89,7 @@ type TireData struct {
 	AvgTireDataFrom []TireData
 }
 
-func (t *TireData) String() string {
+func (t TireData) Format() string {
 	return fmt.Sprintf("FL: %d, FR: %d, RL: %d, RR: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
 }
 

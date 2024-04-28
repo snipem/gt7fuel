@@ -41,7 +41,7 @@ func (h *History) Update(data gt7.GTData) {
 		h.TravelledDistance = append(h.TravelledDistance, float32(0))
 	}
 
-	fmt.Printf("%f m\n", h.TravelledDistance[len(h.TravelledDistance)-1])
+	//fmt.Printf("%f m\n", h.TravelledDistance[len(h.TravelledDistance)-1])
 }
 
 func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) float32 {
@@ -368,8 +368,8 @@ func getHtmlTableForLaps(laps []Lap) string {
 		"\t\t<th>#</th>\n" +
 		"\t\t<th>Duration</th>\n" +
 		"\t\t<th>Time</th>\n" +
-		"\t\t<th>Fuel</th>\n" +
-		"\t\t<th>Tires</th>\n" +
+		"\t\t<th>Fuel Consumed</th>\n" +
+		"\t\t<th>Tires Consumed</th>\n" +
 		"\t</tr>\n",
 	)
 
@@ -389,7 +389,7 @@ func getHtmlTableForLaps(laps []Lap) string {
 			GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap()),
 			GetSportFormat(lap.Duration),
 			lap.GetFuelConsumed(),
-			lap.TiresStart.Diff(lap.TiresEnd),
+			lap.TiresStart.Diff(lap.TiresEnd).Format(),
 		)
 	}
 	html += "</table>\n"
