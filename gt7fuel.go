@@ -149,6 +149,7 @@ func setupRoutes() {
 
 func main() {
 
+	//FIXME delete the oldest pictures in the tire parsing dir
 	parseTwitch := flag.Bool("parse-twitch", true, "Set to true to enable parsing Twitch")
 	raceTime := flag.Int("race-time", 60, "Race time in minutes")
 	twitchUrl := flag.String("twitch-url", "https://www.twitch.tv/snimat", "Twitch URL to parse")

@@ -39,6 +39,7 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
+
 			trRead, err := ProcessImagesInFolder(filename)
 
 			tr.FrontRight = trRead.FrontRight
