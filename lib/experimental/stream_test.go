@@ -76,17 +76,31 @@ func Test_processImage_nodata(t *testing.T) {
 }
 
 func Test_readTireDataFromImage(t *testing.T) {
-	_, flimg, frimg, rlimg, rrimg, err := readTireDataFromImage("testdata_in/SHARE_20240428_1236290_marked.png")
+	inputfilename := "testdata_in/SHARE_20240428_1236290_marked.png"
+	outnames := "testdata/SHARE_20240428_1236290_marked.png"
+
+	writeTiresToDisk(inputfilename, outnames)
+}
+
+func Test_readTireDataFromImageSuzuka(t *testing.T) {
+	inputfilename := "suzuka_test.jpg"
+	outnames := "testdata/suzuka_test.jpg"
+
+	writeTiresToDisk(inputfilename, outnames)
+}
+
+func writeTiresToDisk(inputfilename string, outnames string) {
+	_, flimg, frimg, rlimg, rrimg, err := readTireDataFromImage(inputfilename)
 	if err != nil {
 		return
 	}
-	writeToFile("testdata/SHARE_20240428_1236290.jpeg_fl.jpeg", flimg)
-	writeToFile("testdata/SHARE_20240428_1236290.jpeg_fr.jpeg", frimg)
-	writeToFile("testdata/SHARE_20240428_1236290.jpeg_rl.jpeg", rlimg)
-	writeToFile("testdata/SHARE_20240428_1236290.jpeg_rr.jpeg", rrimg)
+	writeToFile(outnames+"_fl.png", flimg)
+	writeToFile(outnames+"_fr.png", frimg)
+	writeToFile(outnames+"_rl.png", rlimg)
+	writeToFile(outnames+"_rr.png", rrimg)
 }
 
-func writeToFile(filename string, img image.Rectangle) {
+func writeToFile(filename string, img image.Image) {
 
 	// Create a new file
 	file, err := os.Create(filename)
@@ -102,19 +116,21 @@ func writeToFile(filename string, img image.Rectangle) {
 }
 
 func Test_getRelativePositionForTires(t *testing.T) {
-	topLeft, topRight, bottomLeft, bottomRight := getRelativePositionForTires(1920, 1080)
+	topLeft, topRight, bottomLeft, bottomRight, tireHeight := getRelativePositionForTires(1920, 1080)
 
 	assert.Equal(t, 391, topLeft)
 	assert.Equal(t, 476, topRight)
 	assert.Equal(t, 960, bottomLeft)
 	assert.Equal(t, 1011, bottomRight)
+	assert.Equal(t, 36, tireHeight)
 }
 
 func Test_getRelativePositionForTires4k(t *testing.T) {
-	topLeft, topRight, bottomLeft, bottomRight := getRelativePositionForTires(2*1920, 2*1080)
+	topLeft, topRight, bottomLeft, bottomRight, tireHeight := getRelativePositionForTires(2*1920, 2*1080)
 
 	assert.Equal(t, 391, topLeft)
 	assert.Equal(t, 476, topRight)
 	assert.Equal(t, 960, bottomLeft)
 	assert.Equal(t, 1011, bottomRight)
+	assert.Equal(t, 72, tireHeight)
 }
