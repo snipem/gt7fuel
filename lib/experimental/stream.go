@@ -130,7 +130,7 @@ func ProcessImagesInFolder(folder string) (TireData, error) {
 		}
 		imageFilename := path.Join(folder, file.Name())
 		//log.Printf("Processing image %s\n", imageFilename)
-		td, err := processImage(imageFilename)
+		td, _, _, _, _, err := readTireDataFromImage(imageFilename)
 		if err != nil {
 			return TireData{}, err
 		}
@@ -140,7 +140,7 @@ func ProcessImagesInFolder(folder string) (TireData, error) {
 
 		if len(tdReadings) >= maxReadings {
 			avgReading := avgTdReading(tdReadings)
-			log.Printf("Got %d readings\n: %s", len(tdReadings), avgReading)
+			log.Printf("Got %d readings\n: %d , %d, %d, %d", len(tdReadings), avgReading.FrontLeft, avgReading.FrontRight, avgReading.RearLeft, avgReading.RearRight)
 			return avgReading, nil
 		}
 
@@ -178,47 +178,77 @@ func sortFilesByDate(files []os.DirEntry) []os.DirEntry {
 
 }
 
-func processImage(filename string) (TireData, error) {
+func readTireDataFromImage(filename string) (TireData, image.Rectangle, image.Rectangle, image.Rectangle, image.Rectangle, error) {
+	img, creationTime, err := loadImage(filename)
+	if err != nil {
+		return TireData{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, nil
+	}
+
+	tireBoxLeft, tireBoxRight, tireBoxTop, tireBoxBottom := getRelativePositionForTires(img.Bounds().Max.X, img.Bounds().Max.Y)
+
+	imgfl, fl := getTireReading(img, tireBoxLeft, tireBoxTop)
+	imgfr, fr := getTireReading(img, tireBoxRight, tireBoxTop)
+	imgrl, rl := getTireReading(img, tireBoxLeft, tireBoxBottom)
+	imgrr, rr := getTireReading(img, tireBoxRight, tireBoxBottom)
+
+	tr := TireData{
+		FrontLeft:  fl,
+		FrontRight: fr,
+		RearLeft:   rl,
+		RearRight:  rr,
+		Filename:   filename,
+		LastWrite:  creationTime,
+	}
+
+	return tr, imgfl, imgfr, imgrl, imgrr, nil
+}
+
+func loadImage(filename string) (image.Image, time.Time, error) {
 	// Open the JPG file
 	file, err := os.Open(filename)
 	if err != nil {
-		return TireData{}, err
+		return nil, time.Time{},  err
 	}
 	defer file.Close()
 
 	// Decode the JPG image
 	img, _, err := image.Decode(file)
 	if err != nil {
-		return TireData{}, err
+		return nil, time.Time{},  err
 	}
 
 	filestat, err := file.Stat()
 	if err != nil {
-		return TireData{}, err
+		return nil, time.Time{},  err
 	}
-
-	tr := TireData{
-		FrontLeft:  getTireReading(img, 391, 960),
-		FrontRight: getTireReading(img, 476, 960),
-		RearLeft:   getTireReading(img, 391, 1011),
-		RearRight:  getTireReading(img, 476, 1011),
-		Filename:   filename,
-		LastWrite:  filestat.ModTime(),
-	}
-
-	return tr, nil
+	return img, filestat.ModTime(),  nil
 }
 
-func getTireReading(img image.Image, x int, y int) int {
+func getRelativePositionForTires(maxX int, maxY int) (int, int, int, int) {
+	relativePositionTireBoxTopLeft := float32(391) / float32(1920)
+	relativePositionTireBoxTopRight := float32(476) / float32(1920)
+
+	relativePositionTireBoxBottomLeft := float32(960) / float32(1080)
+	relativePositionTireBoxBottomRight := float32(1011) / float32(1080)
+
+	return int(relativePositionTireBoxTopLeft * float32(maxX)), int(relativePositionTireBoxTopRight * float32(maxX)), int(relativePositionTireBoxBottomLeft * float32(maxY)), int(relativePositionTireBoxBottomRight * float32(maxY))
+}
+
+type SubImager interface {
+	SubImage(r image.Rectangle) image.Image
+}
+
+func getTireReading(img image.Image, x int, y int) (image.Image, int) {
 	tireHeight := 36
 	tireWidth := 1
 	topBar := image.Rect(x, y, x+tireWidth, y+tireHeight) // Top bar, 10 pixels height
+	croppedImage := img.(SubImager).SubImage(image.Point{tireHeight, tireWidth})
 
 	// Calculate the total pixels and reddish pixels in each bar
 	tireTotalPixels := topBar.Dy()
 	tireReddishPixels := countReddishPixels(img, topBar)
 	tireReddishPercentage := float64(tireReddishPixels) / float64(tireTotalPixels) * 100
-	return int(100 - tireReddishPercentage)
+	return croppedImage, int(100 - tireReddishPercentage)
 }
 
 func countReddishPixels(img image.Image, rect image.Rectangle) int {
