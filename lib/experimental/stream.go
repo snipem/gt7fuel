@@ -181,15 +181,15 @@ func sortFilesByDate(files []os.DirEntry) []os.DirEntry {
 func readTireDataFromImage(filename string) (TireData, image.Image, image.Image, image.Image, image.Image, error) {
 	img, creationTime, err := loadImage(filename)
 	if err != nil {
-		return TireData{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, nil
+		return TireData{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, image.Rectangle{}, err
 	}
 
-	tireBoxLeft, tireBoxRight, tireBoxTop, tireBoxBottom, tireHeight := getRelativePositionForTires(img.Bounds().Max.X, img.Bounds().Max.Y)
+	tireBoxLeft, tireBoxRight, tireBoxTop, tireBoxBottom, tireHeight, tireWidth := getRelativePositionForTires(img.Bounds().Max.X, img.Bounds().Max.Y)
 
-	imgfl, fl := getTireReading(img, tireBoxLeft, tireBoxTop, tireHeight)
-	imgfr, fr := getTireReading(img, tireBoxRight, tireBoxTop, tireHeight)
-	imgrl, rl := getTireReading(img, tireBoxLeft, tireBoxBottom, tireHeight)
-	imgrr, rr := getTireReading(img, tireBoxRight, tireBoxBottom, tireHeight)
+	imgfl, fl := getTireReading(img, tireBoxLeft, tireBoxTop, tireHeight, tireWidth)
+	imgfr, fr := getTireReading(img, tireBoxRight, tireBoxTop, tireHeight, tireWidth)
+	imgrl, rl := getTireReading(img, tireBoxLeft, tireBoxBottom, tireHeight, tireWidth)
+	imgrr, rr := getTireReading(img, tireBoxRight, tireBoxBottom, tireHeight, tireWidth)
 
 	tr := TireData{
 		FrontLeft:  fl,
@@ -224,33 +224,36 @@ func loadImage(filename string) (image.Image, time.Time, error) {
 	return img, filestat.ModTime(), nil
 }
 
-func getRelativePositionForTires(maxX int, maxY int) (int, int, int, int, int) {
-	// We used full hd to read the initial values
-	const referenceX = float32(1920)
-	const referenceY = float32(1080)
+func getRelativePositionForTires(maxX int, maxY int) (int, int, int, int, int, int) {
+	// We used 4k to read the initial values
+	const referenceX = float32(3840)
+	const referenceY = float32(2160)
 
-	relativeTireHeight := float32(36) / float32(referenceY)
-	relativePositionTireBoxTopLeft := float32(391) / float32(referenceX)
-	relativePositionTireBoxTopRight := float32(476) / float32(referenceX)
+	relativeTireHeight := float32(70) / float32(referenceY)
+	relativeTireWidth := float32(22) / float32(referenceX)
 
-	relativePositionTireBoxBottomLeft := float32(960) / float32(referenceY)
-	relativePositionTireBoxBottomRight := float32(1011) / float32(referenceY)
+	// the position of the left and the right tire box (x)
+	relativePositionTireBoxLeft := float32(772) / float32(referenceX)
+	relativePositionTireBoxRight := float32(940) / float32(referenceX)
 
-	return int(relativePositionTireBoxTopLeft * float32(maxX)), int(relativePositionTireBoxTopRight * float32(maxX)), int(relativePositionTireBoxBottomLeft * float32(maxY)), int(relativePositionTireBoxBottomRight * float32(maxY)), int(relativeTireHeight * float32(maxY))
+	// The hight of the tire boxes on the back (y)
+	relativePositionTireBoxTop := float32(1920) / float32(referenceY)
+	relativePositionTireBoxBottom := float32(2028) / float32(referenceY)
+
+	return int(relativePositionTireBoxLeft * float32(maxX)), int(relativePositionTireBoxRight * float32(maxX)), int(relativePositionTireBoxTop * float32(maxY)), int(relativePositionTireBoxBottom * float32(maxY)), int(relativeTireHeight * float32(maxY)), int(relativeTireWidth * float32(maxX))
 }
 
 type SubImager interface {
 	SubImage(r image.Rectangle) image.Image
 }
 
-func getTireReading(img image.Image, x int, y int, tireHeight int) (image.Image, int) {
-	tireWidth := 1
-	cropSize := image.Rect(x, y, x+tireWidth, y+tireHeight) // Top bar, 10 pixels height
+func getTireReading(img image.Image, x int, y int, tireHeight int, tireWidth int) (image.Image, int) {
+	cropSize := image.Rect(x, y, x+tireWidth, y+tireHeight)
 
 	croppedImage := img.(SubImager).SubImage(cropSize)
 
 	// Calculate the total pixels and reddish pixels in each bar
-	tireTotalPixels := cropSize.Dy()
+	tireTotalPixels := cropSize.Dy() * cropSize.Dx()
 	tireReddishPixels := countReddishPixels(img, cropSize)
 	tireReddishPercentage := float64(tireReddishPixels) / float64(tireTotalPixels) * 100
 	return croppedImage, int(100 - tireReddishPercentage)
