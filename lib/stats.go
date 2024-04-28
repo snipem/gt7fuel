@@ -54,7 +54,7 @@ func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) floa
 
 }
 func packageNumbersToDuration(i int32) time.Duration {
-	return time.Duration(i * 16) * time.Millisecond
+	return time.Duration(i*16) * time.Millisecond
 }
 
 func (h *History) IsTrailBreakingIncreasing() bool {
@@ -389,7 +389,7 @@ func getHtmlTableForLaps(laps []Lap) string {
 			GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap()),
 			GetSportFormat(lap.Duration),
 			lap.GetFuelConsumed(),
-			lap.TiresEnd.Html(),
+			lap.TiresStart.Diff(lap.TiresEnd),
 		)
 	}
 	html += "</table>\n"

@@ -60,8 +60,10 @@ func ReadTireDataFromStream(tr *TireData, streamurl string, filename string) {
 		response, err := runStream(streamurl, filename)
 		log.Println(response)
 		log.Printf("Error while starting stream of %s, %v\n", streamurl, err)
-		time.Sleep(15 * time.Second) // wait 15s before restart
-		log.Println("Restarting stream")
+		waitTime := time.Duration(1) * time.Minute
+		log.Println("Waiting " + waitTime.String() + " before trying to restart stream")
+		time.Sleep(waitTime) // wait 15s before restart
+		log.Println("Attempt to restarting stream")
 	}
 
 }
@@ -88,7 +90,7 @@ type TireData struct {
 }
 
 func (t *TireData) String() string {
-	return fmt.Sprintf("FrontLeft: %d, FrontRight: %d, RearLeft: %d, RearRight: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
+	return fmt.Sprintf("FL: %d, FR: %d, RL: %d, RR: %d", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight)
 }
 
 // Html gives a html table for the tires relative to their position
@@ -106,6 +108,15 @@ func (t *TireData) Html() string {
 			"</table>"+
 			"", t.FrontLeft, t.FrontRight, t.RearLeft, t.RearRight,
 	)
+}
+
+func (t *TireData) Diff(end TireData) TireData {
+	return TireData{
+		FrontLeft:  t.FrontLeft - end.FrontLeft,
+		FrontRight: t.FrontRight - end.FrontRight,
+		RearLeft:   t.RearLeft - end.RearLeft,
+		RearRight:  t.RearRight - end.RearRight,
+	}
 }
 
 func ProcessImagesInFolder(folder string) (TireData, error) {
