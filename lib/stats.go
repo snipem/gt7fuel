@@ -70,12 +70,13 @@ type Stats struct {
 	LastTireData   *experimental.TireData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
-	ManualSetRaceDuration time.Duration
-	raceStartTime         time.Time
-	clock                 clock.Clock
-	ConnectionActive      bool
-	History               *History
-	ShallRun              bool
+	ManualSetRaceDuration    time.Duration
+	raceStartTime            time.Time
+	clock                    clock.Clock
+	ConnectionActive         bool
+	History                  *History
+	ShallRun                 bool
+	HeavyMessageNeedsRefresh bool
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -134,6 +135,7 @@ func NewStats() *Stats {
 	// set a proper clock
 	s.setClock(clock.New())
 	s.ShallRun = true
+	s.HeavyMessageNeedsRefresh = false
 	return &s
 }
 
@@ -250,7 +252,16 @@ func (s *Stats) GetAverageLapTime() (time.Duration, error) {
 
 const NoStartDetected = "Noch kein Start erfasst"
 
-func (s *Stats) GetMessage() Message {
+func (s *Stats) GetHeavyMessage() HeavyMessage {
+
+	formattedLaps := getHtmlTableForLaps(s.Laps)
+
+	return HeavyMessage{
+		FormattedLaps: formattedLaps,
+	}
+}
+
+func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 
 	timeSinceStart := ""
 	errorMessages := []string{}
@@ -328,9 +339,7 @@ func (s *Stats) GetMessage() Message {
 		isValid = false
 	}
 
-	formattedLaps := getHtmlTableForLaps(s.Laps)
-
-	message := Message{
+	message := RealTimeMessage{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                  s.LastData.PackageID,
 		FuelLeft:                   fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
@@ -348,7 +357,6 @@ func (s *Stats) GetMessage() Message {
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
-		FormattedLaps:              formattedLaps,
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
 		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},

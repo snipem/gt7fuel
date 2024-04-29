@@ -132,7 +132,7 @@ func ProcessImagesInFolder(folder string) (TireData, error) {
 	tdReadings := []TireData{}
 
 	if len(files) < maxReadings {
-		log.Printf("Not enough files in folder %s\n", folder)
+		//log.Printf("Not enough files in folder %s\n", folder)
 		return TireData{}, nil
 	}
 

@@ -1,6 +1,6 @@
 package lib
 
-type Message struct {
+type RealTimeMessage struct {
 	Speed                      string  `json:"speed"`
 	PackageID                  int32   `json:"package_id"`
 	FuelLeft                   string  `json:"fuel_left"`
@@ -18,11 +18,14 @@ type Message struct {
 	ErrorMessage               string  `json:"error_message"`
 	NextPitStop                int16   `json:"next_pit_stop"`
 	CurrentLapProgressAdjusted string  `json:"current_lap_progress_adjusted"`
-	FormattedLaps              string  `json:"formatted_laps"`
 	Tires                      string  `json:"tires"`
 	LapTimeDeviation           string  `json:"lap_time_deviation"`
 	TireTemperatures           []int   `json:"tire_temperatures"`
 	TCSActive                  bool    `json:"tcs_active"`
 	ASMActive                  bool    `json:"asma_active"`
 	RisingTrailbreaking        bool    `json:"rising_trailbreaking"`
+}
+
+type HeavyMessage struct {
+	FormattedLaps string `json:"formatted_laps"`
 }

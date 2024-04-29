@@ -32,7 +32,7 @@ func Benchmark_Run(b *testing.B) {
 	maxMessages := 10000
 
 	for loggedMessages <= maxMessages {
-		gt7stats.GetMessage()
+		gt7stats.GetRealTimeMessage()
 		loggedMessages++
 	}
 
