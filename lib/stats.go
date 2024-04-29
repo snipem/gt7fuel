@@ -149,6 +149,7 @@ type Lap struct {
 	PreviousLap  *Lap
 	TiresEnd     experimental.TireData
 	TiresStart   experimental.TireData
+	DataHistory  []gt7.GTData
 }
 
 func (l Lap) String() string {
@@ -198,6 +199,18 @@ func (l Lap) IsOutLapFromPit() bool {
 
 func (l Lap) IsLapIntoPit() bool {
 	return l.GetFuelConsumed() < 0
+}
+
+func (l Lap) GetTopSpeed() float32 {
+	topSpeed := float32(-1)
+	for _, data := range l.DataHistory {
+
+		if data.CarSpeed > topSpeed {
+			topSpeed = data.CarSpeed
+		}
+
+	}
+	return topSpeed
 }
 
 func (s *Stats) Reset() {
@@ -376,6 +389,7 @@ func getHtmlTableForLaps(laps []Lap) string {
 		"\t\t<th>#</th>\n" +
 		"\t\t<th>Duration</th>\n" +
 		"\t\t<th>Time</th>\n" +
+		"\t\t<th>Top Speed</th>\n" +
 		"\t\t<th>Fuel Consumed</th>\n" +
 		"\t\t<th>Tires Consumed</th>\n" +
 		"\t</tr>\n",
@@ -390,12 +404,14 @@ func getHtmlTableForLaps(laps []Lap) string {
 				"\t\t<td>%d</td>\n"+
 				"\t\t<td>%s</td>\n"+
 				"\t\t<td>%s</td>\n"+
+				"\t\t<td>%.0f</td>\n"+
 				"\t\t<td>%.1f%%</td>\n"+
 				"\t\t<td>%s</td>\n"+
 				"\t</tr>\n",
 			lap.Number,
 			GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap()),
 			GetSportFormat(lap.Duration),
+			lap.GetTopSpeed(),
 			lap.GetFuelConsumed(),
 			lap.TiresStart.Diff(lap.TiresEnd).Format(),
 		)

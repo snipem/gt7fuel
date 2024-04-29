@@ -91,14 +91,16 @@ func handleHeavyWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	log.Println("Have websocket connection")
 
 	counter := 0
+	firstContact := true
 	for {
-		if gt7stats.HeavyMessageNeedsRefresh {
+		if gt7stats.HeavyMessageNeedsRefresh || firstContact {
 			counter++
 
 			message := gt7stats.GetHeavyMessage()
 			err = ws.WriteJSON(message)
 			log.Printf("Sent a heavy message")
 			gt7stats.HeavyMessageNeedsRefresh = false
+			firstContact = false
 			if err != nil {
 				log.Printf("Error writing JSON: %s, ending connection\n", err)
 				return // return browser has to reestablish connection

@@ -31,6 +31,8 @@ func LogTick(ld *gt7.GTData, gt7stats *Stats, raceTimeInMinutes *int) bool {
 
 		gt7stats.History.Update(*ld)
 
+		gt7stats.OngoingLap.DataHistory = append(gt7stats.OngoingLap.DataHistory, *ld)
+
 		gt7stats.SetManualSetRaceDuration(time.Duration(*raceTimeInMinutes) * time.Minute)
 
 		if len(gt7stats.Laps) > 0 && ld.CurrentLap == 0 {
