@@ -28,4 +28,5 @@ type RealTimeMessage struct {
 
 type HeavyMessage struct {
 	FormattedLaps string `json:"formatted_laps"`
+	LapSVG        string `json:"lap_svg"`
 }

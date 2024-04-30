@@ -220,6 +220,8 @@
         </svg>
     </div>
 
+    <div id="map-container">
+
     </div>
 </div>
 
@@ -251,6 +253,9 @@
         laps_div.innerHTML = "";
         // FIXME: Use innerhtml directly
         laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
+
+        var map_div = document.getElementById('map-container')
+        map_div.innerHTML = data.lap_svg;
 
     })
 

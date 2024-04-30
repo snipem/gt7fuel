@@ -274,8 +274,14 @@ func (s *Stats) GetHeavyMessage() HeavyMessage {
 
 	formattedLaps := getHtmlTableForLaps(s.Laps)
 
+	lapToDraw := Lap{}
+	if len(s.Laps) > 0 {
+		lapToDraw = s.Laps[len(s.Laps)-1]
+	}
+
 	return HeavyMessage{
 		FormattedLaps: formattedLaps,
+		LapSVG: DrawLapToSVG(lapToDraw),
 	}
 }
 
