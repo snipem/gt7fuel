@@ -81,12 +81,6 @@ type Stats struct {
 	History                  *History
 	ShallRun                 bool
 	HeavyMessageNeedsRefresh bool
-	ManualSetRaceDuration time.Duration
-	raceStartTime         time.Time
-	clock                 clock.Clock
-	ConnectionActive      bool
-	History               *History
-	ShallRun              bool
 	DataHistory           []gt7.GTData
 }
 

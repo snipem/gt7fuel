@@ -184,7 +184,6 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "Laps left in race unknown: error getting duration since start: race start time is not detected, cannot get time since start\nFuel needed to finish race unknown: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0\nFuel Div unknown: error getting fuel needed to finish race: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "-1.0",
-			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetRealTimeMessage())
 	})
@@ -223,7 +222,6 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
 			ErrorMessage:               "",
-			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetRealTimeMessage())
 	})
@@ -262,7 +260,6 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
-			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 		}, s.GetRealTimeMessage())
 	})
 
@@ -304,7 +301,6 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "0.3",
-			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetRealTimeMessage())
 	})
