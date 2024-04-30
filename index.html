@@ -240,9 +240,21 @@
 
 <script>
     const dashboard = document.getElementById('dashboard');
-    const socket = new WebSocket('ws://localhost:9100/ws');
+    const realtimesocket = new WebSocket('ws://localhost:9100/realtimews');
+    const heavysocket = new WebSocket('ws://localhost:9100/heavyws');
 
-    socket.addEventListener('message', (event) => {
+    heavysocket.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+
+        debugger;
+        var laps_div = document.getElementById('laps')
+        laps_div.innerHTML = "";
+        // FIXME: Use innerhtml directly
+        laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
+
+    })
+
+    realtimesocket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
 
         fuel_left.textContent = data.fuel_left + '%';
@@ -295,12 +307,6 @@
         } else {
             alert_stripe_top.textContent = "";
         }
-
-        var laps_div = document.getElementById('laps')
-        laps_div.innerHTML = "";
-        // FIXME: Use innerhtml directly
-        laps_div.insertAdjacentHTML('beforeend', data.formatted_laps);
-
 
         error_message.textContent = data.error_message;
 

@@ -1,0 +1,3 @@
+[submodule "testdata/gt7testdata"]
+	path = testdata/gt7testdata
+	url = git@github.com:snipem/gt7testdata.git

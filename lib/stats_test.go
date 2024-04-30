@@ -167,7 +167,7 @@ func TestStats_GetMessage(t *testing.T) {
 	t.Run("No start yet", func(t *testing.T) {
 		s := NewStats()
 		s.setClock(clock.NewFake())
-		assert.Equal(t, Message{
+		assert.Equal(t, RealTimeMessage{
 			Speed:                      "0",
 			PackageID:                  0,
 			FuelLeft:                   "0.00",
@@ -186,7 +186,7 @@ func TestStats_GetMessage(t *testing.T) {
 			CurrentLapProgressAdjusted: "-1.0",
 			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
-		}, s.GetMessage())
+		}, s.GetRealTimeMessage())
 	})
 
 	t.Run("Start 10 Minutes ago, 30 Minutes Race", func(t *testing.T) {
@@ -206,7 +206,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.Laps = getReasonableLaps()
 		s.OngoingLap = getReasonableOngoingLap()
 
-		assert.Equal(t, Message{
+		assert.Equal(t, RealTimeMessage{
 			Speed:                      "100",
 			PackageID:                  4711,
 			FuelLeft:                   "20.00",
@@ -225,7 +225,7 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "",
 			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
-		}, s.GetMessage())
+		}, s.GetRealTimeMessage())
 	})
 
 	t.Run("Start 10 Minutes ago with 10 Laps in Total", func(t *testing.T) {
@@ -245,7 +245,7 @@ func TestStats_GetMessage(t *testing.T) {
 		s.Laps = getReasonableLaps()
 		s.OngoingLap = getReasonableOngoingLap()
 
-		assert.Equal(t, Message{
+		assert.Equal(t, RealTimeMessage{
 			Speed:                      "100",
 			PackageID:                  4711,
 			FuelLeft:                   "20.00",
@@ -263,7 +263,7 @@ func TestStats_GetMessage(t *testing.T) {
 			CurrentLapProgressAdjusted: "5.3",
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 			FormattedLaps:              getHtmlTableForLaps(s.Laps),
-		}, s.GetMessage())
+		}, s.GetRealTimeMessage())
 	})
 
 	t.Run("No Fuel consumption", func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestStats_GetMessage(t *testing.T) {
 		}
 		s.OngoingLap = getReasonableOngoingLap()
 
-		assert.Equal(t, Message{
+		assert.Equal(t, RealTimeMessage{
 			Speed:                      "100",
 			PackageID:                  4711,
 			FuelLeft:                   "100.00",
@@ -306,7 +306,7 @@ func TestStats_GetMessage(t *testing.T) {
 			CurrentLapProgressAdjusted: "0.3",
 			FormattedLaps:              getHtmlTableForLaps(s.Laps),
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
-		}, s.GetMessage())
+		}, s.GetRealTimeMessage())
 	})
 
 }
@@ -575,4 +575,22 @@ func TestLap_IsRegularLap(t *testing.T) {
 		lap := Lap{Duration: 1 * time.Minute, Number: 2, PreviousLap: &previousLap, FuelStart: 100, FuelEnd: 95}
 		assert.False(t, lap.IsRegularLap())
 	})
+}
+
+func Test_getTravelledDistanceInMeters(t *testing.T) {
+	t.Run("One Hour Drive", func(t *testing.T) {
+		// One Hour in Packages, car should travel 100 km with 100km/h if this is right
+		oneHourInPackages := 60 * 60 * 1000 / 16
+		packageDuration := packageNumbersToDuration(int32(oneHourInPackages))
+		assert.Equal(t, 100*1000, getTravelledDistanceInMeters(float32(100), packageDuration))
+	})
+
+}
+
+func Test_packagesToDuration(t *testing.T) {
+	assert.Equal(t, 16*time.Millisecond, packageNumbersToDuration(1))
+	assert.Equal(t, 1600*time.Millisecond, packageNumbersToDuration(100))
+	oneHourInPackages := 60 * 60 * 1000 / 16
+	assert.Equal(t, 1*time.Hour, packageNumbersToDuration(int32(oneHourInPackages)))
+
 }

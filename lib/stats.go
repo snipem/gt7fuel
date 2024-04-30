@@ -12,14 +12,49 @@ import (
 )
 
 type History struct {
-	Throttle []int
-	Brake    []int
+	Throttle          []int
+	Brake             []int
+	CarSpeed          []int
+	PackageId         []int32
+	TravelledDistance []float32
 }
 
 func (h *History) Update(data gt7.GTData) {
 
+	lastPackageId := int32(0)
+	if len(h.PackageId) > 0 {
+		lastPackageId = h.PackageId[len(h.PackageId)-1]
+	}
+
+	h.PackageId = append(h.PackageId, data.PackageID)
+
 	h.Throttle = append(h.Throttle, int(data.Throttle))
 	h.Brake = append(h.Brake, int(data.Brake))
+	h.CarSpeed = append(h.CarSpeed, int(data.CarSpeed))
+
+	if len(h.TravelledDistance) > 0 {
+		packageDuration := packageNumbersToDuration(data.PackageID - lastPackageId)
+		h.TravelledDistance = append(h.TravelledDistance,
+			h.TravelledDistance[len(h.TravelledDistance)-1],
+			getTravelledDistanceInMeters(data.CarSpeed, packageDuration))
+	} else {
+		h.TravelledDistance = append(h.TravelledDistance, float32(0))
+	}
+
+	//fmt.Printf("%f m\n", h.TravelledDistance[len(h.TravelledDistance)-1])
+}
+
+func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) float32 {
+
+	distancePerHourTravelledInMeters := carSpeed * 1000
+	vmsM := distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+
+	travelledDistance := vmsM * float32(duration.Milliseconds())
+	return travelledDistance
+
+}
+func packageNumbersToDuration(i int32) time.Duration {
+	return time.Duration(i*16) * time.Millisecond
 }
 
 func (h *History) IsTrailBreakingIncreasing() bool {
@@ -35,12 +70,13 @@ type Stats struct {
 	LastTireData   *experimental.TireData
 	// ManualSetRaceDuration is the race duration manually set by the user if it is not
 	// transmitted over telemetry
-	ManualSetRaceDuration time.Duration
-	raceStartTime         time.Time
-	clock                 clock.Clock
-	ConnectionActive      bool
-	History               *History
-	ShallRun              bool
+	ManualSetRaceDuration    time.Duration
+	raceStartTime            time.Time
+	clock                    clock.Clock
+	ConnectionActive         bool
+	History                  *History
+	ShallRun                 bool
+	HeavyMessageNeedsRefresh bool
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -99,6 +135,7 @@ func NewStats() *Stats {
 	// set a proper clock
 	s.setClock(clock.New())
 	s.ShallRun = true
+	s.HeavyMessageNeedsRefresh = false
 	return &s
 }
 
@@ -112,6 +149,7 @@ type Lap struct {
 	PreviousLap  *Lap
 	TiresEnd     experimental.TireData
 	TiresStart   experimental.TireData
+	DataHistory  []gt7.GTData
 }
 
 func (l Lap) String() string {
@@ -161,6 +199,18 @@ func (l Lap) IsOutLapFromPit() bool {
 
 func (l Lap) IsLapIntoPit() bool {
 	return l.GetFuelConsumed() < 0
+}
+
+func (l Lap) GetTopSpeed() float32 {
+	topSpeed := float32(-1)
+	for _, data := range l.DataHistory {
+
+		if data.CarSpeed > topSpeed {
+			topSpeed = data.CarSpeed
+		}
+
+	}
+	return topSpeed
 }
 
 func (s *Stats) Reset() {
@@ -215,7 +265,16 @@ func (s *Stats) GetAverageLapTime() (time.Duration, error) {
 
 const NoStartDetected = "Noch kein Start erfasst"
 
-func (s *Stats) GetMessage() Message {
+func (s *Stats) GetHeavyMessage() HeavyMessage {
+
+	formattedLaps := getHtmlTableForLaps(s.Laps)
+
+	return HeavyMessage{
+		FormattedLaps: formattedLaps,
+	}
+}
+
+func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 
 	timeSinceStart := ""
 	errorMessages := []string{}
@@ -293,9 +352,7 @@ func (s *Stats) GetMessage() Message {
 		isValid = false
 	}
 
-	formattedLaps := getHtmlTableForLaps(s.Laps)
-
-	message := Message{
+	message := RealTimeMessage{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                  s.LastData.PackageID,
 		FuelLeft:                   fmt.Sprintf("%.2f", s.LastData.CurrentFuel),
@@ -313,7 +370,6 @@ func (s *Stats) GetMessage() Message {
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
-		FormattedLaps:              formattedLaps,
 		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
 		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},
@@ -333,8 +389,9 @@ func getHtmlTableForLaps(laps []Lap) string {
 		"\t\t<th>#</th>\n" +
 		"\t\t<th>Duration</th>\n" +
 		"\t\t<th>Time</th>\n" +
-		"\t\t<th>Fuel</th>\n" +
-		"\t\t<th>Tires</th>\n" +
+		"\t\t<th>Top Speed</th>\n" +
+		"\t\t<th>Fuel Consumed</th>\n" +
+		"\t\t<th>Tires Consumed</th>\n" +
 		"\t</tr>\n",
 	)
 
@@ -347,14 +404,16 @@ func getHtmlTableForLaps(laps []Lap) string {
 				"\t\t<td>%d</td>\n"+
 				"\t\t<td>%s</td>\n"+
 				"\t\t<td>%s</td>\n"+
+				"\t\t<td>%.0f</td>\n"+
 				"\t\t<td>%.1f%%</td>\n"+
 				"\t\t<td>%s</td>\n"+
 				"\t</tr>\n",
 			lap.Number,
 			GetSportFormat(lap.GetTotalRaceDurationAtEndOfLap()),
 			GetSportFormat(lap.Duration),
+			lap.GetTopSpeed(),
 			lap.GetFuelConsumed(),
-			lap.TiresEnd.Html(),
+			lap.TiresStart.Diff(lap.TiresEnd).Format(),
 		)
 	}
 	html += "</table>\n"

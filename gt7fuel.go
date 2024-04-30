@@ -80,8 +80,8 @@ func stayAwakeIfConnectionActive(s *lib.Stats) {
 	}
 
 }
+func handleHeavyWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
-func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Error upgrading to WebSocket:", err)
@@ -90,7 +90,38 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 	log.Println("Have websocket connection")
 
-	lastMessage := lib.Message{}
+	counter := 0
+	firstContact := true
+	for {
+		if gt7stats.HeavyMessageNeedsRefresh || firstContact {
+			counter++
+
+			message := gt7stats.GetHeavyMessage()
+			err = ws.WriteJSON(message)
+			log.Printf("Sent a heavy message")
+			gt7stats.HeavyMessageNeedsRefresh = false
+			firstContact = false
+			if err != nil {
+				log.Printf("Error writing JSON: %s, ending connection\n", err)
+				return // return browser has to reestablish connection
+			}
+
+			wait()
+			counter = 0
+		}
+	}
+}
+
+func handleRealtimeWebSocketConnection(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Error upgrading to WebSocket:", err)
+		return
+	}
+	defer ws.Close()
+	log.Println("Have websocket connection")
+
+	lastMessage := lib.RealTimeMessage{}
 	counter := 0
 	equalMessageCounter := 0
 	oldPackageId := int32(0)
@@ -100,7 +131,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 			gt7stats.SetManualSetRaceDuration(time.Duration(raceTimeInMinutes) * time.Minute)
 
-			message := gt7stats.GetMessage()
+			message := gt7stats.GetRealTimeMessage()
 			if !reflect.DeepEqual(lastMessage, message) {
 				err = ws.WriteJSON(message)
 				if err != nil {
@@ -122,7 +153,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func isEqualMessage(m lib.Message, m2 lib.Message) bool {
+func isEqualMessage(m lib.RealTimeMessage, m2 lib.RealTimeMessage) bool {
 	// TODO maybe implement me
 	return false
 }
@@ -144,12 +175,14 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 func setupRoutes() {
 	http.HandleFunc("/", homePage)
-	http.HandleFunc("/ws", handleWebSocketConnection)
+	http.HandleFunc("/realtimews", handleRealtimeWebSocketConnection)
+	http.HandleFunc("/heavyws", handleHeavyWebSocketConnection)
 }
 
 func main() {
 
-	parseTwitch := flag.Bool("parse-twitch", false, "Set to true to enable parsing Twitch")
+	//FIXME delete the oldest pictures in the tire parsing dir
+	parseTwitch := flag.Bool("parse-twitch", true, "Set to true to enable parsing Twitch")
 	raceTime := flag.Int("race-time", 60, "Race time in minutes")
 	twitchUrl := flag.String("twitch-url", "https://www.twitch.tv/snimat", "Twitch URL to parse")
 
