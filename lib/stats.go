@@ -46,10 +46,14 @@ func (h *History) Update(data gt7.GTData) {
 
 func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) float32 {
 
-	distancePerHourTravelledInMeters := carSpeed * 1000
-	vmsM := distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+	var distancePerHourTravelledInMeters float32
+	var vmsM float32
+	var travelledDistance float32
 
-	travelledDistance := vmsM * float32(duration.Milliseconds())
+	distancePerHourTravelledInMeters = carSpeed * float32(1000)
+	vmsM = distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+
+	travelledDistance = vmsM * float32(duration.Milliseconds())
 	return travelledDistance
 
 }
@@ -76,6 +80,7 @@ type Stats struct {
 	ConnectionActive      bool
 	History               *History
 	ShallRun              bool
+	DataHistory           []gt7.GTData
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {

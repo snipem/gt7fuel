@@ -582,7 +582,7 @@ func Test_getTravelledDistanceInMeters(t *testing.T) {
 		// One Hour in Packages, car should travel 100 km with 100km/h if this is right
 		oneHourInPackages := 60 * 60 * 1000 / 16
 		packageDuration := packageNumbersToDuration(int32(oneHourInPackages))
-		assert.Equal(t, 100 * 1000, getTravelledDistanceInMeters(float32(100), packageDuration))
+		assert.Equal(t, float32(100 * 1000), getTravelledDistanceInMeters(float32(100), packageDuration))
 	})
 
 }
@@ -593,4 +593,8 @@ func Test_packagesToDuration(t *testing.T) {
 	oneHourInPackages := 60 * 60 * 1000 / 16
 	assert.Equal(t, 1*time.Hour, packageNumbersToDuration(int32(oneHourInPackages)))
 
+}
+
+func Test_getTravelledDistanceInMeters1(t *testing.T) {
+	assert.Equal(t, float32(100*1000), getTravelledDistanceInMeters(float32(100), 1*time.Hour))
 }
