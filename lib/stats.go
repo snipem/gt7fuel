@@ -81,7 +81,7 @@ type Stats struct {
 	History                  *History
 	ShallRun                 bool
 	HeavyMessageNeedsRefresh bool
-	DataHistory           []gt7.GTData
+	DataHistory              []gt7.GTData
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -281,7 +281,7 @@ func (s *Stats) GetHeavyMessage() HeavyMessage {
 
 	return HeavyMessage{
 		FormattedLaps: formattedLaps,
-		LapSVG: DrawLapToSVG(lapToDraw),
+		LapSVG:        DrawLapToSVG(lapToDraw),
 	}
 }
 
@@ -363,6 +363,8 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 		isValid = false
 	}
 
+	position := s.GetCarPosition()
+
 	message := RealTimeMessage{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
 		PackageID:                  s.LastData.PackageID,
@@ -387,6 +389,7 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 		TCSActive:                  s.LastData.IsTCSEngaged,
 		ASMActive:                  s.LastData.IsASMEngaged,
 		RisingTrailbreaking:        s.History.IsTrailBreakingIncreasing(),
+		Position:                   position,
 	}
 	return message
 
@@ -720,5 +723,14 @@ func (s *Stats) GetFuelDiv() (float32, error) {
 	}
 	fuelDiv := fuelNeededToFinishRaceInTotal - s.LastData.CurrentFuel
 	return fuelDiv, nil
+
+}
+
+func (s *Stats) GetCarPosition() CarPosition {
+	return CarPosition{
+		X:      s.LastData.PositionX,
+		Y:      s.LastData.PositionZ,
+		Facing: s.LastData.PositionY,
+	}
 
 }

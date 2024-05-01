@@ -37,3 +37,14 @@ func getLapFromDump() Lap {
 	return lap
 
 }
+
+func TestDrawLapEmpty(t *testing.T) {
+
+	svg := DrawLapToSVG(Lap{})
+	// save sting to file
+	f, err := os.Create("test_lap_empty.svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.WriteString(svg)
+}

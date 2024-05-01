@@ -180,12 +180,14 @@ func avgTdReading(readings []TireData) TireData {
 }
 
 func sortFilesByDate(files []os.DirEntry) []os.DirEntry {
-	//sort files by date
-	sort.Slice(files, func(i, j int) bool {
-		file1info, _ := files[i].Info()
-		file2info, _ := files[j].Info()
-		return file1info.ModTime().After(file2info.ModTime())
-	})
+	if len(files) > 1 {
+		//sort files by date
+		sort.Slice(files, func(i, j int) bool {
+			file1info, _ := files[i].Info()
+			file2info, _ := files[j].Info()
+			return file1info.ModTime().After(file2info.ModTime())
+		})
+	}
 	return files
 
 }

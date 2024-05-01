@@ -22,7 +22,7 @@ func DrawLapToSVG(lap Lap) string {
 	canvas.Startview(int(maxx), int(maxz), int(minx), int(minz),
 		int(math.Abs(float64(minz)))+int(maxz),
 		int(math.Abs(float64(minx)))+int(maxx),
-		)
+	)
 
 	// higher is less detail
 	detail := 5
@@ -54,6 +54,11 @@ func DrawLapToSVG(lap Lap) string {
 }
 
 func getMaxMinValuesForCoordinates(history []gt7.GTData) (float64, float64, float64, float64) {
+
+	if len(history) == 0 {
+		return 0, 0, 0, 0
+	}
+
 	maxz := float32(0)
 	minz := float32(math.MaxFloat32)
 	maxx := float32(0)
