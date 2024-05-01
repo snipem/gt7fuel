@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"fmt"
 	svg "github.com/ajstarks/svgo"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"math"
@@ -25,6 +26,7 @@ func DrawLapToSVG(lap Lap) string {
 
 	// higher is less detail
 	detail := 5
+	path := ""
 
 	for i, _ := range lap.DataHistory {
 
@@ -33,14 +35,16 @@ func DrawLapToSVG(lap Lap) string {
 			y1 := int(lap.DataHistory[i-detail].PositionZ)
 			x2 := int(lap.DataHistory[i].PositionX)
 			y2 := int(lap.DataHistory[i].PositionZ)
-			//canvas.Circle(x1, y1, 1, "fill:white")
-			canvas.Line(x1, y1, x2, y2, "stroke:white;stroke-width:10")
-			//canvas.Polygon([]int{x1, x2, x2, x1}, []int{y1, y1, y2, y2}, "fill:none;stroke:white;stroke-width:7")
+
+			path += fmt.Sprintf("M %d,%d L %d,%d",x1,y1,x2,y2)
 		}
-
-		// Add Connection between last and first
-
 	}
+
+	// Close gap
+	path += fmt.Sprintf("M %d,%d L %d,%d z", int(lap.DataHistory[len(lap.DataHistory)-1].PositionX), int(lap.DataHistory[len(lap.DataHistory)-1].PositionZ), int(lap.DataHistory[0].PositionX), int(lap.DataHistory[0].PositionZ))
+
+	// https://www.w3.org/TR/SVG11/paths.html
+	canvas.Path(path, "fill:none;stroke:white;stroke-width:7")
 
 	//canvas.Text(width/2, height/2, "Hello, SVG", "text-anchor:middle;font-size:30px;fill:white")
 	canvas.End()
