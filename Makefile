@@ -9,3 +9,6 @@ run:
 
 test:
 	go test ./lib
+	
+deps:
+	git submodule update --init --recursive
