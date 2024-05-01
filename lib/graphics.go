@@ -36,7 +36,7 @@ func DrawLapToSVG(lap Lap) string {
 			x2 := int(lap.DataHistory[i].PositionX)
 			y2 := int(lap.DataHistory[i].PositionZ)
 
-			path += fmt.Sprintf("M %d,%d L %d,%d",x1,y1,x2,y2)
+			path += fmt.Sprintf("M %d,%d L %d,%d ",x1,y1,x2,y2)
 		}
 	}
 
@@ -44,7 +44,7 @@ func DrawLapToSVG(lap Lap) string {
 	path += fmt.Sprintf("M %d,%d L %d,%d z", int(lap.DataHistory[len(lap.DataHistory)-1].PositionX), int(lap.DataHistory[len(lap.DataHistory)-1].PositionZ), int(lap.DataHistory[0].PositionX), int(lap.DataHistory[0].PositionZ))
 
 	// https://www.w3.org/TR/SVG11/paths.html
-	canvas.Path(path, "fill:none;stroke:white;stroke-width:7")
+	canvas.Path(path, "fill:none;stroke:white;stroke-width:10")
 
 	//canvas.Text(width/2, height/2, "Hello, SVG", "text-anchor:middle;font-size:30px;fill:white")
 	canvas.End()
