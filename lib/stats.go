@@ -360,7 +360,9 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 	laptimedevitaion, err := s.GetLapTimeDeviation()
 	if err != nil {
 		errorMessages = append(errorMessages, fmt.Sprintf("Laptime deviation unknown: %v", err))
-		isValid = false
+		// Lap time deviation can only engage after 2 laps, so it should not be able to mark the whole message invalid
+		// This would mean that we only get valid data in lap 3
+		//isValid = false
 	}
 
 	position := s.GetCarPosition()

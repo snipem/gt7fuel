@@ -184,6 +184,8 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "Laps left in race unknown: error getting duration since start: race start time is not detected, cannot get time since start\nFuel needed to finish race unknown: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0\nFuel Div unknown: error getting fuel needed to finish race: error getting fuel consumption last lap: not enough laps to return fuel consumption of last lap, nr of laps: 0",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "-1.0",
+			LapTimeDeviation:           "00:00.000",
+			TireTemperatures:           []int{0, 0, 0, 0},
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
 		}, s.GetRealTimeMessage())
 	})
@@ -223,6 +225,8 @@ func TestStats_GetMessage(t *testing.T) {
 			CurrentLapProgressAdjusted: "5.3",
 			ErrorMessage:               "",
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			LapTimeDeviation:           "00:00.000",
+			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
 	})
 
@@ -260,6 +264,8 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			LapTimeDeviation:           "00:00.000",
+			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
 	})
 
@@ -302,6 +308,8 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "0.3",
 			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			LapTimeDeviation:           "00:00.000",
+			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
 	})
 
@@ -542,15 +550,24 @@ func Test_getFuelConsumptionLastLap(t *testing.T) {
 }
 
 func Test_getLapTimeDeviation(t *testing.T) {
-	stdDev, err := getLapTimeDeviation([]Lap{
-		{Duration: 10*time.Minute + 1*time.Second, Number: 1}, // does not count
-		{Duration: 1*time.Minute + 4*time.Second, Number: 2},
-		{Duration: 1*time.Minute + 2*time.Second, Number: 3},
-		{Duration: 1*time.Minute + 3*time.Second, Number: 4},
+	t.Run("With custom laps", func(t *testing.T) {
+		stdDev, err := getLapTimeDeviation([]Lap{
+			{Duration: 10*time.Minute + 1*time.Second, Number: 1}, // does not count
+			{Duration: 1*time.Minute + 4*time.Second, Number: 2},
+			{Duration: 1*time.Minute + 2*time.Second, Number: 3},
+			{Duration: 1*time.Minute + 3*time.Second, Number: 4},
+		})
+		assert.NoError(t, err)
+		assert.LessOrEqual(t, stdDev, 1*time.Second)
+		fmt.Println("Std Dev Time: ", GetSportFormat(stdDev))
 	})
-	assert.NoError(t, err)
-	assert.LessOrEqual(t, stdDev, 1*time.Second)
-	fmt.Println("Std Dev Time: ", GetSportFormat(stdDev))
+
+	t.Run("With reasonable laps", func(t *testing.T) {
+
+		_, err := getLapTimeDeviation(getReasonableLaps())
+		assert.Error(t, err)
+		// These laps have only lap 0 and 1. Only lap 2 would be valid so fail
+	})
 }
 
 func TestLap_IsRegularLap(t *testing.T) {
@@ -579,6 +596,12 @@ func Test_getTravelledDistanceInMeters(t *testing.T) {
 		oneHourInPackages := 60 * 60 * 1000 / 16
 		packageDuration := packageNumbersToDuration(int32(oneHourInPackages))
 		assert.Equal(t, 100*1000, getTravelledDistanceInMeters(float32(100), packageDuration))
+	})
+
+	t.Run("2 Seconds Drive", func(t *testing.T) {
+		timeDurationInPackages := 2 * 1000 / 16
+		packageDuration := packageNumbersToDuration(int32(timeDurationInPackages))
+		assert.Equal(t, 20.5, getTravelledDistanceInMeters(float32(100), packageDuration))
 	})
 
 }

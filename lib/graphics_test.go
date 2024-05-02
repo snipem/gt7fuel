@@ -2,6 +2,7 @@ package lib
 
 import (
 	"github.com/snipem/gt7tools/lib/dump"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,8 +12,9 @@ func Test_drawLap(t *testing.T) {
 
 	lap := getLapFromDump()
 	svg := DrawLapToSVG(lap)
+	assert.Contains(t, svg, "<svg")
 	// save sting to file
-	f, err := os.Create("test_lap.svg")
+	f, err := os.Create(filepath.Join("testdata_out", "test_lap.svg"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,8 +43,10 @@ func getLapFromDump() Lap {
 func TestDrawLapEmpty(t *testing.T) {
 
 	svg := DrawLapToSVG(Lap{})
+	assert.Contains(t, svg, "<svg")
+	assert.NotContains(t, svg, "path")
 	// save sting to file
-	f, err := os.Create("test_lap_empty.svg")
+	f, err := os.Create(filepath.Join("testdata_out", "test_lap_empty.svg"))
 	if err != nil {
 		t.Fatal(err)
 	}
