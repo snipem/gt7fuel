@@ -6,11 +6,12 @@ import (
 	svg "github.com/ajstarks/svgo"
 	gt7 "github.com/snipem/go-gt7-telemetry/lib"
 	"math"
+	"strings"
 )
 
 func DrawLapToSVG(lap Lap) string {
 
-	padding := 20
+	//padding := 20
 
 	maxx, maxz, minx, minz := getMaxMinValuesForCoordinates(lap.DataHistory)
 
@@ -19,11 +20,25 @@ func DrawLapToSVG(lap Lap) string {
 	//width := 2 * int(maxx)
 	//height := 2* int(maxz)
 
+	widthOfTrack := int(math.Abs(minx) + math.Abs(maxx))
+	heightOfTrack := int(math.Abs(minz) + math.Abs(maxz))
+
+	fmt.Printf("%d %d %d %d %d %d",
+		int(maxx),
+		int(maxz),
+		int(minx),
+		int(minz),
+		int(widthOfTrack),
+		int(heightOfTrack))
+
 	canvas := svg.New(buf)
 	//canvas.Start(width, height)
-	canvas.Startview(int(maxx), int(maxz), int(minx)-padding, int(minz)+padding,
-		int(math.Abs(float64(minz)))+int(maxz),
-		int(math.Abs(float64(minx)))+int(maxx),
+	canvas.Startview(
+		widthOfTrack, heightOfTrack,
+		int(minx),
+		int(minz),
+		widthOfTrack,
+		heightOfTrack,
 	)
 
 	// higher is less detail
@@ -51,10 +66,15 @@ func DrawLapToSVG(lap Lap) string {
 		canvas.Path(path, "fill:none;stroke:white;stroke-width:10")
 	}
 
+	//canvas.Rect(int(minx), int(minz), heightOfTrack, widthOfTrack)
 	//canvas.Text(width/2, height/2, "Hello, SVG", "text-anchor:middle;font-size:30px;fill:white")
 	canvas.End()
 
-	return buf.String()
+	// for debuggin
+	svg := buf.String()
+	svg = strings.Replace(svg, "xmlns=\"http://www.w3.org/2000/svg\"", "xmlns=\"http://www.w3.org/2000/svg\" style=\"background-color:green\"", 1)
+
+	return svg
 
 }
 
