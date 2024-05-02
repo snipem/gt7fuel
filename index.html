@@ -321,6 +321,27 @@
 
         error_message.textContent = data.error_message;
 
+        var map = document.querySelectorAll("#map-container > svg")
+        var oldcircle = document.querySelectorAll("#map-container > svg > circle")
+
+        for (let i = 0; i < oldcircle.length; i++) {
+            oldcircle[i].remove()
+        }
+
+        if (map.length > 0) {
+
+            // container = document.getElementById( 'cont' );
+            var svgns = "http://www.w3.org/2000/svg";
+
+            var circle = document.createElementNS(svgns, 'circle');
+            circle.setAttributeNS(null, 'cx', data.position.x);
+            circle.setAttributeNS(null, 'cy', data.position.y);
+            circle.setAttributeNS(null, 'r', 15);
+            circle.setAttributeNS(null, 'style', 'fill: red; stroke: black; stroke-width: 1px;' );
+            // debugger;
+            map[0].appendChild(circle);
+        }
+
         const tireIcons = document.querySelectorAll('.tire');
 
         // Example temperatures in Celsius
