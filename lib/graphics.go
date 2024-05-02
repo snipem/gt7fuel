@@ -10,6 +10,8 @@ import (
 
 func DrawLapToSVG(lap Lap) string {
 
+	padding := 20
+
 	maxx, maxz, minx, minz := getMaxMinValuesForCoordinates(lap.DataHistory)
 
 	buf := new(bytes.Buffer)
@@ -19,7 +21,7 @@ func DrawLapToSVG(lap Lap) string {
 
 	canvas := svg.New(buf)
 	//canvas.Start(width, height)
-	canvas.Startview(int(maxx), int(maxz), int(minx), int(minz),
+	canvas.Startview(int(maxx), int(maxz), int(minx)-padding, int(minz)+padding,
 		int(math.Abs(float64(minz)))+int(maxz),
 		int(math.Abs(float64(minx)))+int(maxx),
 	)
@@ -45,6 +47,7 @@ func DrawLapToSVG(lap Lap) string {
 		path += fmt.Sprintf("M %d,%d L %d,%d z", int(lap.DataHistory[len(lap.DataHistory)-1].PositionX), int(lap.DataHistory[len(lap.DataHistory)-1].PositionZ), int(lap.DataHistory[0].PositionX), int(lap.DataHistory[0].PositionZ))
 
 		// https://www.w3.org/TR/SVG11/paths.html
+		canvas.Path(path, "fill:none;stroke:black;stroke-width:14")
 		canvas.Path(path, "fill:none;stroke:white;stroke-width:10")
 	}
 
