@@ -46,10 +46,14 @@ func (h *History) Update(data gt7.GTData) {
 
 func getTravelledDistanceInMeters(carSpeed float32, duration time.Duration) float32 {
 
-	distancePerHourTravelledInMeters := carSpeed * 1000
-	vmsM := distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+	var distancePerHourTravelledInMeters float32
+	var vmsM float32
+	var travelledDistance float32
 
-	travelledDistance := vmsM * float32(duration.Milliseconds())
+	distancePerHourTravelledInMeters = carSpeed * float32(1000)
+	vmsM = distancePerHourTravelledInMeters / 60 / 60 / 1000 // distance travelled by millisecond
+
+	travelledDistance = vmsM * float32(duration.Milliseconds())
 	return travelledDistance
 
 }
@@ -77,6 +81,7 @@ type Stats struct {
 	History                  *History
 	ShallRun                 bool
 	HeavyMessageNeedsRefresh bool
+	DataHistory              []gt7.GTData
 }
 
 func (s *Stats) GetLapTimeDeviation() (duration time.Duration, err error) {
@@ -269,8 +274,14 @@ func (s *Stats) GetHeavyMessage() HeavyMessage {
 
 	formattedLaps := getHtmlTableForLaps(s.Laps)
 
+	lapToDraw := Lap{}
+	if len(s.Laps) > 0 {
+		lapToDraw = s.Laps[len(s.Laps)-1]
+	}
+
 	return HeavyMessage{
 		FormattedLaps: formattedLaps,
+		LapSVG:        DrawLapToSVG(lapToDraw),
 	}
 }
 
@@ -349,8 +360,12 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 	laptimedevitaion, err := s.GetLapTimeDeviation()
 	if err != nil {
 		errorMessages = append(errorMessages, fmt.Sprintf("Laptime deviation unknown: %v", err))
-		isValid = false
+		// Lap time deviation can only engage after 2 laps, so it should not be able to mark the whole message invalid
+		// This would mean that we only get valid data in lap 3
+		//isValid = false
 	}
+
+	position := s.GetCarPosition()
 
 	message := RealTimeMessage{
 		Speed:                      fmt.Sprintf("%.0f", s.LastData.CarSpeed),
@@ -376,6 +391,7 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 		TCSActive:                  s.LastData.IsTCSEngaged,
 		ASMActive:                  s.LastData.IsASMEngaged,
 		RisingTrailbreaking:        s.History.IsTrailBreakingIncreasing(),
+		Position:                   position,
 	}
 	return message
 
@@ -709,5 +725,14 @@ func (s *Stats) GetFuelDiv() (float32, error) {
 	}
 	fuelDiv := fuelNeededToFinishRaceInTotal - s.LastData.CurrentFuel
 	return fuelDiv, nil
+
+}
+
+func (s *Stats) GetCarPosition() CarPosition {
+	return CarPosition{
+		X:      s.LastData.PositionX,
+		Y:      s.LastData.PositionZ,
+		Facing: s.LastData.PositionY,
+	}
 
 }

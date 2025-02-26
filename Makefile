@@ -9,3 +9,10 @@ run:
 
 test:
 	go test ./lib
+
+deps:
+	git submodule update --init --recursive
+
+
+run_dump:
+	go run gt7fuel.go --dump-file testdata/gt7testdata/watkinsglen.gob.gz

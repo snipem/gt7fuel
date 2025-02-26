@@ -6,3 +6,5 @@ lib/experimental/esistmanu.jpg
 lib/experimental/testdata
 lib/experimental/test
 lib/experimental/testdata_out
+lib/test_lap.svg
+lib/testdata_out/*.svg
