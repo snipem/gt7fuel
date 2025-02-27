@@ -385,7 +385,7 @@ func (s *Stats) GetRealTimeMessage() RealTimeMessage {
 		ErrorMessage:               errorMessage,
 		NextPitStop:                int16(nextPitStop),
 		CurrentLapProgressAdjusted: fmt.Sprintf("%.1f", currentLapProgressAdjusted),
-		Tires:                      fmt.Sprintf("Vorne: %d%%, %d%% Hinten: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
+		Tires:                      fmt.Sprintf("Front: %d%%, %d%% Rear: %d%%, %d%%", s.LastTireData.FrontLeft, s.LastTireData.FrontRight, s.LastTireData.RearLeft, s.LastTireData.RearRight),
 		LapTimeDeviation:           GetSportFormat(laptimedevitaion),
 		TireTemperatures:           []int{int(s.LastData.TyreTempFL), int(s.LastData.TyreTempFR), int(s.LastData.TyreTempRL), int(s.LastData.TyreTempRR)},
 		TCSActive:                  s.LastData.IsTCSEngaged,

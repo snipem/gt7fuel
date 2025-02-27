@@ -71,7 +71,7 @@ func stayAwakeIfConnectionActive(s *lib.Stats) {
 				}
 				//log.Println("Staying awake ended")
 			} else {
-				log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
+				//log.Printf("Staying awake is only supported on Mac not on %s\n", runtime.GOOS)
 			}
 		} else {
 			log.Println("GT7 Connection is not active")
@@ -184,7 +184,7 @@ func main() {
 	//FIXME delete the oldest pictures in the tire parsing dir
 	parseTwitch := flag.Bool("parse-twitch", true, "Set to true to enable parsing Twitch")
 	raceTime := flag.Int("race-time", 60, "Race time in minutes")
-	twitchUrl := flag.String("twitch-url", "https://www.twitch.tv/snimat", "Twitch URL to parse")
+	twitchUrl := flag.String("twitch-url", "", "Twitch channel URL to parse")
 
 	dumpFile := flag.String("dump-file", "", "Dump file for loading dumped data instead of real telemetry")
 

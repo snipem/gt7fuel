@@ -186,7 +186,7 @@ func TestStats_GetMessage(t *testing.T) {
 			CurrentLapProgressAdjusted: "-1.0",
 			LapTimeDeviation:           "00:00.000",
 			TireTemperatures:           []int{0, 0, 0, 0},
-			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			Tires:                      "Front: 0%, 0% Rear: 0%, 0%",
 		}, s.GetRealTimeMessage())
 	})
 
@@ -224,7 +224,7 @@ func TestStats_GetMessage(t *testing.T) {
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
 			ErrorMessage:               "",
-			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			Tires:                      "Front: 0%, 0% Rear: 0%, 0%",
 			LapTimeDeviation:           "00:00.000",
 			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
@@ -263,7 +263,7 @@ func TestStats_GetMessage(t *testing.T) {
 			FuelConsumptionPerMinute:   "16.67",
 			NextPitStop:                5,
 			CurrentLapProgressAdjusted: "5.3",
-			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			Tires:                      "Front: 0%, 0% Rear: 0%, 0%",
 			LapTimeDeviation:           "00:00.000",
 			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
@@ -307,7 +307,7 @@ func TestStats_GetMessage(t *testing.T) {
 			ErrorMessage:               "",
 			NextPitStop:                -1,
 			CurrentLapProgressAdjusted: "0.3",
-			Tires:                      "Vorne: 0%, 0% Hinten: 0%, 0%",
+			Tires:                      "Front: 0%, 0% Rear: 0%, 0%",
 			LapTimeDeviation:           "00:00.000",
 			TireTemperatures:           []int{0, 0, 0, 0},
 		}, s.GetRealTimeMessage())
