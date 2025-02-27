@@ -23,7 +23,7 @@ See Releases. Works on Mac, Linux and Windows.
 
 ## Functionality
 
-- **Dynamic Background Alerts**
+- **Dynamic Background Color**
   - The dashboard changes its background based on the need for refueling:
     - **Green**: No Refuel necessary, finish the race in the current stint
     - **Blue**: You will have to refuel to finish the race
